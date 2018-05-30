@@ -50,7 +50,7 @@ def BestCorr_MP(queue):
     
     mind = min(dx, dy)
     maxd = max(dx, dy)
-    Set = [x for x in Set if x>=mind]
+    Set = [float(x) for x in Set if x>=mind]
 
     while True:
         Value = queue.get()

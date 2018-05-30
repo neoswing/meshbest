@@ -189,7 +189,7 @@ def PerformCrystalRecognition(jsondata):
         Wavelength = jsondata['inputDozor']['wavelength']
         DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
         BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
-        DetectorPixel = jsondata['beamlineInfo']['detectorPixel']
+        DetectorPixel = jsondata['beamlineInfo']['detectorPixelSize']*1000
         Ztable = jsondata['MeshBest']['Ztable']
     except KeyError:
         logger.error('Experiment parameters (Wavelength, DetectorDistance, BeamCenter) \

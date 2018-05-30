@@ -384,7 +384,7 @@ def DetermineMCdiffraction(jsondata):
         Wavelength = jsondata['inputDozor']['wavelength']
         DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
         BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
-        DetectorPixel = jsondata['beamlineInfo']['detectorPixel']
+        DetectorPixel = jsondata['beamlineInfo']['detectorPixelSize']*1000
         row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
     except KeyError:
         logger.error('Experiment parameters are not communicated in the JSON')
@@ -479,20 +479,20 @@ def DetermineMCdiffraction(jsondata):
         logger.error('AMPD: Too little data to estimate histogram baseline')
         base_regions = numpy.array([])
         jsondata['MeshBest']['MXDiff'] = base64.b64encode(numpy.zeros((row, col)))
+        
     
     
-    jsondata['MeshBest']['DVBase_Regions'] = base64.b64encode(base_regions)
+    jsondata['MeshBest']['DVBase_Regions'] = base_regions.tolist()
         
     fig1 = plt.figure()
     
     ax1 = fig1.add_subplot(111)
-    
+    X = numpy.linspace(0.001, 0.04, 100)
     plt.plot(X, HIST, 'k')
-    ax1.plot(X, fit)
+#    ax1.plot(X, fit)
     if len(numpy.atleast_1d(base_regions)):
         xbase = X[base_regions]
         plt.scatter(xbase, HIST[base_regions], color='red')
-        
     ax1.set_xlim([0.001, 0.04])
     ax1.set_ylim([0.0, 1.1*numpy.max(HIST)])
     plt.title('Histogram of inter-spot distances in the reciprocal space')
