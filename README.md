@@ -17,7 +17,7 @@
     -Numbers of columns and rows of the mesh scan (col, row)
 
     -X-ray wavelength used, Detector distance, Centre coordinates of the beam (in detector px), Beam dimensions (mm),
-    detector pixel size (microns) and a list of available aperture sizes (in microns) to predict aperture choice
+    detector pixel size (mm) and a list of available aperture sizes (in microns) to predict aperture choice
 
     -Lists of detected spot coordinates and for each image of the mesh scan: in detector coordinates, in base64 string
     format
