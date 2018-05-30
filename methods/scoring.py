@@ -4,13 +4,22 @@ Created on May 15, 2018
 @author: melnikov
 '''
 import numpy
-import sys
 from scipy import ndimage
 import scipy.cluster.hierarchy as hca
 import base64
 from matplotlib import pyplot as plt
 import multiprocessing as mp
 import ctypes
+
+
+try:
+    print(1 / 0)
+    from workflow_lib import workflow_logging
+    logger = workflow_logging.getLogger()
+except:
+    import logging
+    logger = logging.getLogger("MeshBest")
+
 
 
 def From64ToSpotArray(string64):
@@ -82,7 +91,7 @@ def DistanceCalc_MP(queue):
             Buffer[int(bufcoord)] = F
 
         else:
-            logger.debug('ERROR: spot list not found')
+            logger.error('Problem of referencing - spot lists are not found')
 
 
 
@@ -175,14 +184,17 @@ def CalculateZone(jsondata, keys):
 
 def PerformCrystalRecognition(jsondata):
     global Wavelength, DetectorDistance, BeamCenter, DetectorPixel, Ztable
-    
-    Wavelength = jsondata['inputDozor']['wavelength']
-    DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
-    BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
-    DetectorPixel = jsondata['beamlineInfo']['detectorPixel']
-    Ztable = jsondata['MeshBest']['Ztable']
-    
-    
+
+    try:
+        Wavelength = jsondata['inputDozor']['wavelength']
+        DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
+        BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
+        DetectorPixel = jsondata['beamlineInfo']['detectorPixel']
+        Ztable = jsondata['MeshBest']['Ztable']
+    except KeyError:
+        logger.error('Experiment parameters (Wavelength, DetectorDistance, BeamCenter) \
+        are not communicated in the JSON')
+        return None
 
     if numpy.size(Ztable[Ztable == 0]) == 1:
         Ztable[Ztable == 0] = 1

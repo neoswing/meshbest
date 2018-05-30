@@ -13,7 +13,13 @@ from matplotlib import pyplot as plt
 import multiprocessing as mp
 import ctypes
 
-
+try:
+    print(1 / 0)
+    from workflow_lib import workflow_logging
+    logger = workflow_logging.getLogger()
+except:
+    import logging
+    logger = logging.getLogger("MeshBest")
 
 
 
@@ -129,8 +135,7 @@ def AMPD(array_orig):
     if len(fullpeaklist)>1:
         return fullpeaklist
     else:
-        logger.debug('Too little data to estimate histogram baseline')
-        return 0
+        return None
 
     
     
@@ -333,8 +338,12 @@ def OverlapCheck_MP(queue, base_regions):
 
 
 def EliminateSaltRings(jsondata):
-    
-    BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
+    try:
+        BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
+    except KeyError:
+        logger.error('Beam Center is not defined in the JSON')
+        return None
+
     
     manager = mp.Manager()
     Buffer = manager.dict()
@@ -371,12 +380,15 @@ def DetermineMCdiffraction(jsondata):
     nCPU = mp.cpu_count()
     queue = mp.Queue()
     
-    
-    Wavelength = jsondata['inputDozor']['wavelength']
-    DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
-    BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
-    DetectorPixel = jsondata['beamlineInfo']['detectorPixel']
-    row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
+    try:
+        Wavelength = jsondata['inputDozor']['wavelength']
+        DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
+        BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
+        DetectorPixel = jsondata['beamlineInfo']['detectorPixel']
+        row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
+    except KeyError:
+        logger.error('Experiment parameters are not communicated in the JSON')
+        return None
 
     for item in jsondata['meshPositions']:
         queue.put(item)
@@ -404,9 +416,8 @@ def DetermineMCdiffraction(jsondata):
             HIST += numpy.fromstring(base64.b64decode(item['DVHistogram']))
     
     Buffer = 0
-    
-# filtering
 
+# filtering
     window = signal.general_gaussian(M=5, p=1, sig=1)
     filtered = signal.fftconvolve(HIST, window, mode='same')
     numpy.roll(filtered, -2)
@@ -416,36 +427,72 @@ def DetermineMCdiffraction(jsondata):
     plt.close()
     
     jsondata['MeshBest']['Cumulative_DVHistogram'] = base64.b64encode(HIST)
+
     init_base = AMPD(numpy.max(filtered)-filtered)
-
-    X = numpy.linspace(0.001, 0.04, 100)[init_base]
-    init_array = HIST[init_base]
-
-    k = numpy.mean(X*init_array)/numpy.mean(X*X)
     
-    std = numpy.sqrt(numpy.mean((k*X-init_array)**2))
-    weights = numpy.exp((k*X-init_array)/std)
-#    print weights
-    k = numpy.mean(X*init_array*weights)/numpy.mean(X*X*weights)
+    if init_base!=None:
+        X = numpy.linspace(0.001, 0.04, 100)[init_base]
+        init_array = HIST[init_base]
     
-    X = numpy.linspace(0.001, 0.04, 100)
-    fit = k*X
-
-#    base_regions = (HIST - fit)<0
-    base_regions = (HIST - fit)/std<=0.5
+        k = numpy.mean(X*init_array)/numpy.mean(X*X)
+        
+        std = numpy.sqrt(numpy.mean((k*X-init_array)**2))
+        weights = numpy.exp((k*X-init_array)/std)
+    #    print weights
+        k = numpy.mean(X*init_array*weights)/numpy.mean(X*X*weights)
+        
+        X = numpy.linspace(0.001, 0.04, 100)
+        fit = k*X
+    
+    #    base_regions = (HIST - fit)<0
+        base_regions = (HIST - fit)/std<=0.5
+        
+#check for overlap
+        
+        Buffer = mp.RawArray(ctypes.c_double, row * col)
+    
+        for item in jsondata['meshPositions']:
+            queue.put(item)
+        for item in xrange(nCPU):
+            queue.put(None)
+    
+        workers = []
+        for item in xrange(nCPU):
+            worker = mp.Process(target=OverlapCheck_MP, args=(queue, base_regions,))
+            workers.append(worker)
+            worker.start()
+        for worker in workers:
+            worker.join()
+        
+        
+        MXDiff = numpy.frombuffer(Buffer)
+        MXDiff = MXDiff.reshape(row, col)
+        Buffer = 0
+        
+        
+        jsondata['MeshBest']['MXDiff'] = base64.b64encode(MXDiff)
+        
+        jsondata['MeshBest']['Ztable'][MXDiff==1] = -2
+        
+        
+    else:
+        logger.error('AMPD: Too little data to estimate histogram baseline')
+        base_regions = numpy.array([])
+        jsondata['MeshBest']['MXDiff'] = base64.b64encode(numpy.zeros((row, col)))
+    
     
     jsondata['MeshBest']['DVBase_Regions'] = base64.b64encode(base_regions)
-    
+        
     fig1 = plt.figure()
-
+    
     ax1 = fig1.add_subplot(111)
-
+    
     plt.plot(X, HIST, 'k')
-#    ax1.plot(X, fit)
+    ax1.plot(X, fit)
     if len(numpy.atleast_1d(base_regions)):
         xbase = X[base_regions]
         plt.scatter(xbase, HIST[base_regions], color='red')
-    
+        
     ax1.set_xlim([0.001, 0.04])
     ax1.set_ylim([0.0, 1.1*numpy.max(HIST)])
     plt.title('Histogram of inter-spot distances in the reciprocal space')
@@ -456,29 +503,5 @@ def DetermineMCdiffraction(jsondata):
     plt.savefig('Cumulative_DVHistogram.png', dpi=300, transparent=True, bbox_inches='tight')
     plt.close()
 #    plt.show()
-    
-    Buffer = mp.RawArray(ctypes.c_double, row * col)
-    
-    for item in jsondata['meshPositions']:
-        queue.put(item)
-    for item in xrange(nCPU):
-        queue.put(None)
 
-    workers = []
-    for item in xrange(nCPU):
-        worker = mp.Process(target=OverlapCheck_MP, args=(queue, base_regions,))
-        workers.append(worker)
-        worker.start()
-    for worker in workers:
-        worker.join()
-    
-    
-    MXDiff = numpy.frombuffer(Buffer)
-    MXDiff = MXDiff.reshape(row, col)
-    Buffer = 0
-    
-    
-    jsondata['MeshBest']['MXDiff'] = base64.b64encode(MXDiff)
-    
-    jsondata['MeshBest']['Ztable'][MXDiff==1] = -2
 

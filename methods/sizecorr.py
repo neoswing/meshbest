@@ -12,7 +12,16 @@ import multiprocessing as mp
 
 
 
-
+try:
+    print(1 / 0)
+    from workflow_lib import workflow_logging
+    logger = workflow_logging.getLogger()
+except:
+    import logging
+    logger = logging.getLogger("MeshBest")
+    
+    
+    
 
 def SpotMatrix(n):
 
@@ -290,12 +299,20 @@ def BestCorr_MP(queue):
 def GetAllPositions(jsondata):
     global Buffer, Dtable, Ztable, difminpar, AvailableApertures, size_x, size_y
     
-    Dtable = jsondata['MeshBest']['Dtable']
-    Ztable = jsondata['MeshBest']['Ztable']
-    difminpar = jsondata['MeshBest']['difminpar']
-    size_x = jsondata['grid_info']['beam_width']
-    size_y = jsondata['grid_info']['beam_height']
-    AvailableApertures = jsondata['beamlineInfo']['beamlineApertures']
+    try:
+        Dtable = jsondata['MeshBest']['Dtable']
+        Ztable = jsondata['MeshBest']['Ztable']
+    except KeyError:
+        logger.error('Size Corr: No data to work with in the JSON')
+        return None
+    try:
+        difminpar = jsondata['MeshBest']['difminpar']
+        size_x = jsondata['grid_info']['beam_width']
+        size_y = jsondata['grid_info']['beam_height']
+        AvailableApertures = jsondata['beamlineInfo']['beamlineApertures']
+    except KeyError:
+        logger.error('Experiment parameters are not communicated in the JSON')
+        return None
     
     
     manager = mp.Manager()

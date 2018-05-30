@@ -11,7 +11,13 @@ import multiprocessing as mp
 import base64
 from scipy.optimize import differential_evolution
 
-
+try:
+    print(1 / 0)
+    from workflow_lib import workflow_logging
+    logger = workflow_logging.getLogger()
+except:
+    import logging
+    logger = logging.getLogger("MeshBest")
 
 
 
@@ -124,10 +130,16 @@ def FitEllipse_MP(queue):
 
 def DoEllipseFit(jsondata):
     global improvedZ, improvedD, Ztable, Dtable, Buffer
+    try:
+        Dtable = jsondata['MeshBest']['Dtable']
+        Ztable = jsondata['MeshBest']['Ztable']
+    except KeyError:
+        logger.error('Ellipse fit: No data to work with in the JSON')
+        return None
     
-    Dtable = jsondata['MeshBest']['Dtable']
-    Ztable = jsondata['MeshBest']['Ztable']
-    
+    if numpy.all(Ztable<0):
+        logger.error('Ellipse fit: No signal in the mesh scan')
+        return None
     
     improvedZ = numpy.zeros((numpy.shape(Ztable)[0] + 2, numpy.shape(Ztable)[1] + 2))
     improvedD = numpy.zeros((numpy.shape(Ztable)[0] + 2, numpy.shape(Ztable)[1] + 2))

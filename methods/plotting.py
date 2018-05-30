@@ -12,7 +12,14 @@ from matplotlib.patches import Circle, Ellipse as El
 from scipy import ndimage, signal
 import random
 
-
+try:
+    print(1 / 0)
+    from workflow_lib import workflow_logging
+    logger = workflow_logging.getLogger()
+except:
+    import logging
+    logger = logging.getLogger("MeshBest")
+    
 
 def ConstructColorlist(array):
     basecolors = ['#FF0101', '#F5A26F', '#668DE5', '#E224DE', '#04FEFD', '#00CA02', '#FEFE00', '#0004AF', '#B5FF06']
@@ -61,14 +68,20 @@ def ConstructColorlist(array):
 
 def MainPlot(jsondata, ax, addPositions=True):
     
-
-    row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
-    difminpar = jsondata['MeshBest']['difminpar']
-    
-    Dtable = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['Dtable']))
-    Dtable = numpy.reshape(Dtable, (row, col))
-    Ztable = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['Ztable']))
-    Ztable = numpy.reshape(Ztable, (row, col))
+    try:
+        row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
+        difminpar = jsondata['MeshBest']['difminpar']
+    except KeyError:
+        logger.error('Experiment parameters are not communicated in the JSON')
+        return None
+    try:
+        Dtable = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['Dtable']))
+        Dtable = numpy.reshape(Dtable, (row, col))
+        Ztable = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['Ztable']))
+        Ztable = numpy.reshape(Ztable, (row, col))
+    except KeyError:
+        logger.error('Plotting: No data to work with in the JSON')
+        return None
 
     clrs = ConstructColorlist(Ztable)
 #    logger.debug('Checkpoint for colormap function:', (time.time()-start_time))
@@ -120,12 +133,14 @@ def MainPlot(jsondata, ax, addPositions=True):
                             fill=False, edgecolor=edgecolor, zorder=5))
         except KeyError:
             pass
-        
-        BestPositions = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['BestPositions']))
-        BestPositions = numpy.reshape(BestPositions, (numpy.size(BestPositions)/4, 4))
-        
-        for position in BestPositions:
-            ax.add_artist(Circle((position[0], position[1]), position[2]/2.0, zorder=5, clip_on=False,
-                                 linewidth=3, edgecolor='orange', fill=False))
+        try:
+            BestPositions = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['BestPositions']))
+            BestPositions = numpy.reshape(BestPositions, (numpy.size(BestPositions)/4, 4))
+            
+            for position in BestPositions:
+                ax.add_artist(Circle((position[0], position[1]), position[2]/2.0, zorder=5, clip_on=False,
+                                     linewidth=3, edgecolor='orange', fill=False))
+        except KeyError:
+            logger.error('addPositions error: Best Positions are not communicated in the JSON')
     
 

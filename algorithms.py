@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 
 from meshbest.methods import dvanalysis, scoring, ellipticfit, sizecorr, plotting
 
-
 try:
     print(1 / 0)
     from workflow_lib import workflow_logging
@@ -39,23 +38,6 @@ start_time = time.time()
 
 
 
-BLDescriptor = {}
-BLDescriptor['ID231'] = {'detectorname': 'pilatus6m', 'pixelsize': 172.0, \
-                         'availableapertures': [(10.0, 10.0), (20.0, 20.0), (30.0, 30.0), (30.0, 45.0)]}
-BLDescriptor['ID232'] = {'detectorname': 'pilatus2m', 'pixelsize': 172.0, \
-                         'availableapertures': [(10.0, 4.0)]}
-BLDescriptor['ID29'] = {'detectorname': 'pilatus6m', 'pixelsize': 172.0, \
-                        'availableapertures': [(10.0, 10.0), (20.0, 20.0), (30.0, 40.0)]}
-BLDescriptor['ID30A1'] = {'detectorname': 'pilatus2m', 'pixelsize': 172.0, \
-                          'availableapertures': [(10.0, 10.0), (20.0, 20.0), (30.0, 30.0), (50.0, 50.0)]}
-BLDescriptor['ID30A3'] = {'detectorname': 'eigerx4m', 'pixelsize': 75.0, \
-                          'availableapertures': [(15.0, 15.0)]}
-BLDescriptor['ID30B'] = {'detectorname': 'pilatus6m', 'pixelsize': 172.0, \
-                         'availableapertures': [(10.0, 10.0), (20.0, 20.0), (30.0, 30.0), (50.0, 50.0), (100.0, 100.0)]}
-
-
-
-
 
 
 def classic(jsonFilePath, resultsPath=None):
@@ -64,9 +46,8 @@ def classic(jsonFilePath, resultsPath=None):
         os.chdir(resultsPath)
     
     difminpar = 0.2
-    beamlinename = 'ID231'
     
-    logger.debug('Checkpoint0: Start - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint0: Start - {0}s'.format('%0.3f') % (time.time() - start_time))
 
     json_file = open(jsonFilePath, 'r')
     jsondata = json.load(json_file)
@@ -79,11 +60,6 @@ def classic(jsonFilePath, resultsPath=None):
         i = item['indexY']
         j = item['indexZ']
         Dtable[j, i] = item['dozor_score']
-        
-        
-        
-    jsondata['beamlineInfo'] = {}
-    
     
     
     jsondata['MeshBest'] = {'type': 'classic'}
@@ -94,29 +70,22 @@ def classic(jsonFilePath, resultsPath=None):
     plt.savefig('Dtable.png', dpi=300, transparent=True, bbox_inches='tight')  # , pad_inches=0)
     plt.close()
     
-#    DetectorPixel = jsondata['beamlineInfo']['detectorPixel']
-#    AvailableApertures = jsondata['beamlineInfo']['beamlineApertures']
-    
-    
-    AvailableApertures = numpy.array([10.0, 20.0, 30.0, 45.0])#BLDescriptor[beamlinename]['availableapertures']
-    DetectorPixel = BLDescriptor[beamlinename]['pixelsize']
-    jsondata['beamlineInfo']['detectorPixel'] = DetectorPixel
-    jsondata['beamlineInfo']['beamlineApertures'] = AvailableApertures.tolist()
+
     jsondata['MeshBest']['difminpar'] = difminpar
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
     
     jsondata['MeshBest']['Ztable'] = Ztable
-    logger.debug('Checkpoint1: Initial data acquired - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint1: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     dvanalysis.EliminateSaltRings(jsondata)
-    logger.debug('Checkpoint2: SaltRing Analysis - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint2: SaltRing Analysis - {0}s'.format('%0.3f') % (time.time() - start_time))
 
     dvanalysis.DetermineMCdiffraction(jsondata)
-    logger.debug('Checkpoint3: DV Analysis - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint3: DV Analysis - {0}s'.format('%0.3f') % (time.time() - start_time))
 
     scoring.PerformCrystalRecognition(jsondata)
-    logger.debug('Checkpoint4: Crystal recognition - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint4: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     if numpy.all(Ztable < 0):
         logger.debug('MeshBest terminated with no valuable signal detected')
@@ -129,7 +98,7 @@ def classic(jsonFilePath, resultsPath=None):
         else:
             sizecorr.GetAllPositions(jsondata)
         
-        logger.debug('Checkpoint5: Shape Fit {0}'.format((time.time() - start_time)))
+        logger.debug('Checkpoint5: Shape Fit {0}s'.format('%0.3f') % (time.time() - start_time))
 
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
         jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
@@ -143,7 +112,7 @@ def classic(jsonFilePath, resultsPath=None):
         
         with open('MeshResults.json', 'w') as outfile:
             json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
-        logger.debug('Checkpoint6: Finish {0}'.format((time.time() - start_time)))
+        logger.debug('Checkpoint6: Finish {0}s'.format('%0.3f') % (time.time() - start_time))
 
 
 
@@ -153,9 +122,8 @@ def hamburg(jsonFilePath, process_data=False, resultsPath=None):
         os.chdir(resultsPath)
     
     difminpar = 0.2
-    beamlinename = 'ID231'
     
-    logger.debug('Checkpoint0: Start - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint0: Start - {0}s'.format('%0.3f') % (time.time() - start_time))
 
     json_file = open(jsonFilePath, 'r')
     jsondata = json.load(json_file)
@@ -177,37 +145,30 @@ def hamburg(jsonFilePath, process_data=False, resultsPath=None):
     plt.savefig('Dtable.png', dpi=300, transparent=True, bbox_inches='tight')  # , pad_inches=0)
     plt.close()
     
-#    DetectorPixel = jsondata['beamlineInfo']['detectorPixel']
-#    AvailableApertures = jsondata['beamlineInfo']['beamlineApertures']
-    
-    jsondata['beamlineInfo'] = {}
-    
-    AvailableApertures = numpy.array([10.0, 20.0, 30.0, 45.0])#BLDescriptor[beamlinename]['availableapertures']
-    DetectorPixel = BLDescriptor[beamlinename]['pixelsize']
-    jsondata['beamlineInfo']['detectorPixel'] = DetectorPixel
-    jsondata['beamlineInfo']['beamlineApertures'] = AvailableApertures.tolist()
-    
     jsondata['MeshBest']['difminpar'] = difminpar
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
     
     jsondata['MeshBest']['Ztable'] = Ztable
-    logger.debug('Checkpoint1: Initial data acquired - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint1: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     dvanalysis.EliminateSaltRings(jsondata)
-    logger.debug('Checkpoint2: SaltRing Analysis - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint2: SaltRing Analysis - {0}s'.format('%0.3f') % (time.time() - start_time))
 
     dvanalysis.DetermineMCdiffraction(jsondata)
-    logger.debug('Checkpoint3: DV Analysis - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint3: DV Analysis - {0}s'.format('%0.3f') % (time.time() - start_time))
 
     scoring.PerformCrystalRecognition(jsondata)
-    logger.debug('Checkpoint4: Crystal recognition - {0}'.format((time.time() - start_time)))
+    logger.debug('Checkpoint4: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
 
     jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
     jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
 
     if numpy.all(Ztable < 0):
         logger.debug('MeshBest terminated with no valuable signal detected')
+        with open('MeshResults.json', 'w') as outfile:
+            json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
+
         
     else:
         fig = plt.figure()
@@ -229,7 +190,7 @@ def hamburg(jsonFilePath, process_data=False, resultsPath=None):
 
         #Omega check
         if round(jsondata['meshPositions'][1]['omega']-jsondata['meshPositions'][0]['omega'], 2)==0:
-            print 'Omega is not changed during the mesh scan'
+            logger.debug('Omega is not changed during the mesh scan')
             with open('MeshResults.json', 'w') as outfile:
                 json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
             sys.exit()
@@ -255,17 +216,16 @@ def hamburg(jsonFilePath, process_data=False, resultsPath=None):
             Z = 0
             first = -1
             last = -1
-            
-
-        print listOfEdges
         
         
         
         with open('MeshResults.json', 'w') as outfile:
             json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
 
-        logger.debug('Checkpoint6: Finish {0}'.format((time.time() - start_time)))
-
+        logger.debug('Checkpoint6: Finish {0}s'.format('%0.3f') % (time.time() - start_time))
+        
+        return listOfEdges
+        
 
 
 
