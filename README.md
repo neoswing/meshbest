@@ -31,7 +31,7 @@
 #        -------Output-------
     
     MeshBest produces a 2D colour map indicating different crystal zones found in the sample area. This map appears
-    under the name **CrystalMesh.png** in the MeshBest working directory. Most of MeshBest output can be found in
+    under the name ** CrystalMesh.png ** in the MeshBest working directory. Most of MeshBest output can be found in
     **MeshResults.json file**, in **['MeshBest']** partition of the dictionary. The dictionary is also returned by
     **classic()** method function.
     
