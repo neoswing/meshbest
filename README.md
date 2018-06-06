@@ -1,4 +1,4 @@
-### meshbest
+# meshbest
 
 
 
@@ -36,7 +36,7 @@ under the name **CrystalMesh.png** in the MeshBest working directory. Most of Me
 **classic()** method function.
 
 
-# Best Positions
+### Best Positions
 
 If MeshBest detected less than 3 crystals in the sample area the output given is elliptic approximation of the
 crystals. If more crystals are detected then the output gives best positions and corresponding aperture choices
@@ -52,7 +52,7 @@ Every row represents a particular position/crystal for data collection. "Result_
 file with an output array.
 
 
-# Elliptic Fit
+### Elliptic Fit
 
 If elliptic approximations have been made to crystal areas, the output dictionary contains ellipse parameters in
 **['MeshBest']['EllipseArray']** in base64 string format.
