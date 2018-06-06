@@ -12,7 +12,6 @@ import base64
 from scipy.optimize import differential_evolution
 
 try:
-    print(1 / 0)
     from workflow_lib import workflow_logging
     logger = workflow_logging.getLogger()
 except:

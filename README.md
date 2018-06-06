@@ -30,12 +30,17 @@
     
 #        -------Output-------
     
-    MeshBest produces a 2D colour map indicating different crystal zones found in the sample area.
+    MeshBest produces a 2D colour map indicating different crystal zones found in the sample area. This map appears
+    under the name <b>CrystalMesh.png</b> in the MeshBest working directory. Most of MeshBest output can be found in
+    MeshResults.json file, in ['MeshBest'] partition of the dictionary. The dictionary is also returned by classic()
+    method function.
     
+    
+    Best Positions
     If MeshBest detected less than 3 crystals in the sample area the output given is elliptic approximation of the
     crystals. If more crystals are detected then the output gives best positions and corresponding aperture choices
-    for multicrystal data collection. The structure of the output array is independent of the case and is the
-    following:
+    for multicrystal data collection. The output array is returned in ['MeshBest']['BestPositions'] dictionary partition.
+    The structure of the output array is independent of the case and is the following:
     
     column 0: X coordinate of the centre
     column 1: Y coordinate of the centre
@@ -44,6 +49,11 @@
     
     Every row represents a particular position/crystal for data collection. "Result_BestPositions.txt" is the text
     file with an output array.
+    
+    
+    Elliptic Fit
+    If elliptic approximations have been made to crystal areas, the output dictionary contains ellipse parameters in
+    ['MeshBest']['EllipseArray']
     
     The output also gives a text file with parameters of ellipses - "Result_Ellipses.txt", where the architecture
     is similar:
@@ -71,23 +81,22 @@
 
 
 
-#Changes_log
+#    Changes_log
 
- v9
-many changes
-newDistanceFunction
-new method for overlap treating
-v9.2
-polished structure
-calculation now takes place only in each diffraction zone
-v9.3
-the distance between the images is no more counted in detector-dependent pixels but angular difference
-v9.4
-overlap detection was linked with number of satellite spots instead of histogram slope
-v9.5
-fixed bug with diagonal ellipse fit to the mesh scan squares
-v10
-Changed the way ellipse fit is organised: only for ~single crystals it is used; for multiple crystals in the sample
-area we try to implement zone-size correlation to adapt the appropriate aperture size
-Input parameters are assembled together
-Modified linkage for clustering
+    v9: many changes
+    newDistanceFunction
+    new method for overlap treating
+    v9.2
+    polished structure
+    calculation now takes place only in each diffraction zone
+    v9.3
+    the distance between the images is no more counted in detector-dependent pixels but angular difference
+    v9.4
+    overlap detection was linked with number of satellite spots instead of histogram slope
+    v9.5
+    fixed bug with diagonal ellipse fit to the mesh scan squares
+    v10
+    Changed the way ellipse fit is organised: only for ~single crystals it is used; for multiple crystals in the sample
+    area we try to implement zone-size correlation to adapt the appropriate aperture size
+    Input parameters are assembled together
+    Modified linkage for clustering

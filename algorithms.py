@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 from meshbest.methods import dvanalysis, scoring, ellipticfit, sizecorr, plotting
 
 try:
-    print(1 / 0)
     from workflow_lib import workflow_logging
     logger = workflow_logging.getLogger()
 except:
@@ -90,6 +89,10 @@ def classic(jsonFilePath, resultsPath=None):
     if numpy.all(Ztable < 0):
         logger.debug('MeshBest terminated with no valuable signal detected')
         numpy.savetxt('Result_BestPositions.txt', [])
+        
+        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
+        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+        
         jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
 
     else:
@@ -110,9 +113,11 @@ def classic(jsonFilePath, resultsPath=None):
         plotting.MainPlot(jsondata, ax)
         plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight')  # , pad_inches=0)
         
-        with open('MeshResults.json', 'w') as outfile:
-            json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
-        logger.debug('Checkpoint6: Finish {0}s'.format('%0.3f') % (time.time() - start_time))
+    with open('MeshResults.json', 'w') as outfile:
+        json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
+    logger.debug('Checkpoint6: Finish {0}s'.format('%0.3f') % (time.time() - start_time))
+    
+    return jsondata
 
 
 

@@ -14,7 +14,6 @@ import multiprocessing as mp
 import ctypes
 
 try:
-    print(1 / 0)
     from workflow_lib import workflow_logging
     logger = workflow_logging.getLogger()
 except:
