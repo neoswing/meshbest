@@ -31,16 +31,16 @@
 #        -------Output-------
     
     MeshBest produces a 2D colour map indicating different crystal zones found in the sample area. This map appears
-    under the name <b>CrystalMesh.png</b> in the MeshBest working directory. Most of MeshBest output can be found in
-    MeshResults.json file, in ['MeshBest'] partition of the dictionary. The dictionary is also returned by classic()
-    method function.
+    under the name **CrystalMesh.png** in the MeshBest working directory. Most of MeshBest output can be found in
+    **MeshResults.json file**, in **['MeshBest']** partition of the dictionary. The dictionary is also returned by
+    **classic()** method function.
     
     
-    Best Positions
+    **Best Positions**
     If MeshBest detected less than 3 crystals in the sample area the output given is elliptic approximation of the
     crystals. If more crystals are detected then the output gives best positions and corresponding aperture choices
-    for multicrystal data collection. The output array is returned in ['MeshBest']['BestPositions'] dictionary partition.
-    The structure of the output array is independent of the case and is the following:
+    for multicrystal data collection. The output array is returned in **['MeshBest']['BestPositions']** dictionary
+    partition in base64 string format. The structure of the output array is independent of the case and is the following:
     
     column 0: X coordinate of the centre
     column 1: Y coordinate of the centre
@@ -53,7 +53,7 @@
     
     Elliptic Fit
     If elliptic approximations have been made to crystal areas, the output dictionary contains ellipse parameters in
-    ['MeshBest']['EllipseArray']
+    **['MeshBest']['EllipseArray']** in base64 string format.
     
     The output also gives a text file with parameters of ellipses - "Result_Ellipses.txt", where the architecture
     is similar:
@@ -67,9 +67,9 @@
 
 #        -------Usage-------
     
-    To proceed with the classic algorithm of mesh scan analysis one should call the function classic() imported
+    To proceed with the classic algorithm of mesh scan analysis one should call the function **classic()** imported
     from meshbest.algorithms. One should pass the json file to the function with all experiment parameters and
-    pre-analysis by Dozor. If working directory is not specified as a second argument to classic(), MeshBest
+    pre-analysis by Dozor. If working directory is not specified as a second argument to **classic()**, MeshBest
     will work in the CWD and produce related output files there.
     
 
