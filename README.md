@@ -1,34 +1,34 @@
-# meshbest
+### meshbest
 
 
 
     This is Mesh Best software module.
 
-#        -------Tasks-------
+##        -------Tasks-------
 
 MeshBest performs recognition of the crystal samples based on a mesh scan (or 2D X-ray diffraction scan routine).
 It says how many crystals are in the scanned 2D area, how well they diffract and also reports their dispositions
 and size approximations.
 
-#        -------Input-------
+##        -------Input-------
 
 *MeshResults*.json dictionary file containing:
 
-*Numbers of columns and rows of the mesh scan (col, row)
+* Numbers of columns and rows of the mesh scan (col, row)
 
-*X-ray wavelength used, Detector distance, Centre coordinates of the beam (in detector px), Beam dimensions (mm),
+* X-ray wavelength used, Detector distance, Centre coordinates of the beam (in detector px), Beam dimensions (mm),
 detector pixel size (mm) and a list of available aperture sizes (in microns) to predict aperture choice
 
-*Lists of detected spot coordinates and for each image of the mesh scan: in detector coordinates, in base64 string
+* Lists of detected spot coordinates and for each image of the mesh scan: in detector coordinates, in base64 string
 format
 
-*Overall diffraction score for each image
+* Overall diffraction score for each image
 
 MeshBest uses .json file containing all experiment parameters (of a mesh scan) and output given by Dozor pre-
 analysis. The output from Dozor should contain diffraction score evaluation for every image of the mesh scan and
 as well a list of detected diffraction spot coordinates in base64 string format.
 
-#        -------Output-------
+##        -------Output-------
 
 MeshBest produces a 2D colour map indicating different crystal zones found in the sample area. This map appears
 under the name **CrystalMesh.png** in the MeshBest working directory. Most of MeshBest output can be found in
@@ -36,7 +36,8 @@ under the name **CrystalMesh.png** in the MeshBest working directory. Most of Me
 **classic()** method function.
 
 
-*Best Positions
+# Best Positions
+
 If MeshBest detected less than 3 crystals in the sample area the output given is elliptic approximation of the
 crystals. If more crystals are detected then the output gives best positions and corresponding aperture choices
 for multicrystal data collection. The output array is returned in **['MeshBest']['BestPositions']** dictionary
@@ -51,7 +52,8 @@ Every row represents a particular position/crystal for data collection. "Result_
 file with an output array.
 
 
-*Elliptic Fit
+# Elliptic Fit
+
 If elliptic approximations have been made to crystal areas, the output dictionary contains ellipse parameters in
 **['MeshBest']['EllipseArray']** in base64 string format.
 
@@ -65,38 +67,9 @@ is similar:
 *    column 4: Angle between the long axis and mesh scan X-axis
 *    column 5: Integral diffraction quality
 
-#        -------Usage-------
+##        -------Usage-------
 
 To proceed with the classic algorithm of mesh scan analysis one should call the function **classic()** imported
 from meshbest.algorithms. One should pass the json file to the function with all experiment parameters and
 pre-analysis by Dozor. If working directory is not specified as a second argument to **classic()**, MeshBest
 will work in the CWD and produce related output files there.
-    
-
-
-
-
-
-
-
-
-
-#    Changes_log
-
-    v9: many changes
-    newDistanceFunction
-    new method for overlap treating
-    v9.2
-    polished structure
-    calculation now takes place only in each diffraction zone
-    v9.3
-    the distance between the images is no more counted in detector-dependent pixels but angular difference
-    v9.4
-    overlap detection was linked with number of satellite spots instead of histogram slope
-    v9.5
-    fixed bug with diagonal ellipse fit to the mesh scan squares
-    v10
-    Changed the way ellipse fit is organised: only for ~single crystals it is used; for multiple crystals in the sample
-    area we try to implement zone-size correlation to adapt the appropriate aperture size
-    Input parameters are assembled together
-    Modified linkage for clustering
