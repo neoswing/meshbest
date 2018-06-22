@@ -210,17 +210,7 @@ def PerformCrystalRecognition(jsondata):
             else:
                 CalculateZone(jsondata, keys)
         
-        
-        
-#       this fix is to avoid detached zones being in one crystal
-    
-        Zmax = int(numpy.max(Ztable))
-        for Value in range(1, Zmax + 1):
-            Connectivity = ndimage.measurements.label((Ztable==Value), structure=numpy.ones((3, 3)))
-        
-            if Connectivity[1]>1:
-                for i in range(2, 1+Connectivity[1]):
-                    Ztable[numpy.where(Connectivity[0]==i)] = numpy.max(Ztable)+1
+
 
     jsondata['MeshBest']['Ztable'] = Ztable
     numpy.savetxt('Ztable.txt', Ztable, fmt='%d')

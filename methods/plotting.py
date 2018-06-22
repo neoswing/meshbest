@@ -51,7 +51,7 @@ def ConstructColorlist(array):
         t = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     ColorVector = ColorVector.astype(int)
 
-    random.shuffle(basecolors)
+#    random.shuffle(basecolors)
     Colors = ColorVector.astype('a7')
     for i in xrange(N):
         Colors[i] = basecolors[ColorVector[i] - 1]
