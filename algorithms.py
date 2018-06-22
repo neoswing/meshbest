@@ -139,9 +139,9 @@ def xraycentering(jsonFilePath, resultsPath=None):
     plt.savefig('Dtable.png', dpi=300, transparent=True, bbox_inches='tight')  # , pad_inches=0)
     plt.close()
 
-    jsondata['beamlineInfo'] = {}
-    jsondata['beamlineInfo']['detectorPixelSize'] = 172
-    jsondata['beamlineInfo']['beamlineApertures'] = [10, 20, 30, 45]
+#    jsondata['beamlineInfo'] = {}
+#    jsondata['beamlineInfo']['detectorPixelSize'] = 172
+#    jsondata['beamlineInfo']['beamlineApertures'] = [10, 20, 30, 45]
 
 
 
