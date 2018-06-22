@@ -93,12 +93,22 @@ def MainPlot(jsondata, ax, addPositions=True):
 
     bounds = numpy.linspace(-2, Ncolors - 2, Ncolors + 1)
     norm = colors.BoundaryNorm(bounds, ncolors=Ncolors)
-
+    
     CrystImage = plt.imshow(Ztable, cmap=cmap, norm=norm, interpolation='nearest', origin='upper', \
                             extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
     OpacityImage = plt.imshow(Dtable, cmap=cmap2, interpolation='nearest', origin='upper', vmin=difminpar, \
                               vmax=numpy.percentile(Dtable, 99), extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
+    
+    opacity = 1+cmap2(Dtable)[:, :, 3]
+    rgb = cmap(norm(Ztable))
+    
+    hexArray = numpy.empty(numpy.shape(opacity), dtype='U7')
+    for i, v in numpy.ndenumerate(opacity):
+        hexArray[i] = colors.rgb2hex(v*rgb[i][:3])
+    
+    jsondata['MeshBest']['hexArray'] = base64.b64encode(hexArray)
 
+    
     for (j, i) in numpy.ndindex((row, col)):
         if Ztable[j, i] > 0:
             if (j, i + 1) in numpy.ndindex((row, col)):
@@ -131,15 +141,14 @@ def MainPlot(jsondata, ax, addPositions=True):
                             EllipseArray[line, 2], EllipseArray[line, 4], linewidth=linewidth,
                             fill=False, edgecolor=edgecolor, zorder=5))
         except KeyError:
-            pass
-        try:
-            BestPositions = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['BestPositions']))
-            BestPositions = numpy.reshape(BestPositions, (numpy.size(BestPositions)/4, 4))
-            
-            for position in BestPositions:
-                ax.add_artist(Circle((position[0], position[1]), position[2]/2.0, zorder=5, clip_on=False,
-                                     linewidth=3, edgecolor='orange', fill=False))
-        except KeyError:
-            logger.error('addPositions error: Best Positions are not communicated in the JSON')
+            try:
+                BestPositions = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['BestPositions']))
+                BestPositions = numpy.reshape(BestPositions, (numpy.size(BestPositions)/4, 4))
+                
+                for position in BestPositions:
+                    ax.add_artist(Circle((position[0], position[1]), position[2]/2.0, zorder=5, clip_on=False,
+                                         linewidth=3, edgecolor='orange', fill=False))
+            except KeyError:
+                logger.error('addPositions error: Best Positions are not communicated in the JSON')
     
 

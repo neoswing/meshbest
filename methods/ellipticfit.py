@@ -169,7 +169,7 @@ def DoEllipseFit(jsondata):
 
     
     EllipseArray = numpy.array(temp)[:, 1:]
-    EllipseArray[:, 4] = -numpy.array(temp)[:, 6]
+    EllipseArray[:, 4] = numpy.array(temp)[:, 5]
     EllipseArray[:, 5] = numpy.pi*temp[:, 3]*temp[:, 4]*temp[:, 6]/6.0
     EllipseArray = EllipseArray[EllipseArray[:, 5].argsort()][::-1]
 

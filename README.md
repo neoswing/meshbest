@@ -33,15 +33,15 @@ as well a list of detected diffraction spot coordinates in base64 string format.
 MeshBest produces a 2D colour map indicating different crystal zones found in the sample area. This map appears
 under the name **CrystalMesh.png** in the MeshBest working directory. Most of MeshBest output can be found in
 **MeshResults.json file**, in **['MeshBest']** partition of the dictionary. The dictionary is also returned by
-**classic()** method function.
+**simple()** method function.
 
 
 ### Best Positions
 
-If MeshBest detected less than 3 crystals in the sample area the output given is elliptic approximation of the
-crystals. If more crystals are detected then the output gives best positions and corresponding aperture choices
-for multicrystal data collection. The output array is returned in **['MeshBest']['BestPositions']** dictionary
-partition in base64 string format. The structure of the output array is independent of the case and is the following:
+For multicrystal MeshAndCollect experiment pipeline MeshBest does pre-analysis where estimates positions and
+appropriate beam sizes (depends on the available aperture sizes on the beamline) for collecting small wedges
+of data.The output array is returned in **['MeshBest']['BestPositions']** dictionary partition in base64 string
+format. The structure of the output array is the following:
 
 *    column 0: X coordinate of the centre
 *    column 1: Y coordinate of the centre
@@ -53,6 +53,8 @@ file with an output array.
 
 
 ### Elliptic Fit
+
+For X-ray Centering pipeline MeshBest does crystal approximations on the map to elliptic shapes.
 
 If elliptic approximations have been made to crystal areas, the output dictionary contains ellipse parameters in
 **['MeshBest']['EllipseArray']** in base64 string format.
@@ -69,7 +71,7 @@ is similar:
 
 ##        -------Usage-------
 
-To proceed with the classic algorithm of mesh scan analysis one should call the function **classic()** imported
+To proceed with the simple algorithm where returned is only a crystal map one should call the function **simple()** imported
 from meshbest.algorithms. One should pass the json file to the function with all experiment parameters and
-pre-analysis by Dozor. If working directory is not specified as a second argument to **classic()**, MeshBest
+pre-analysis by Dozor. If working directory is not specified as a second argument to **simple()**, MeshBest
 will work in the CWD and produce related output files there.
