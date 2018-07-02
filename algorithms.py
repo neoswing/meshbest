@@ -336,11 +336,10 @@ def linescan(jsonFilePath, resultsPath=None):
         BestPositions = numpy.append(BestPositions,\
                                      numpy.array([[0.0, C, -1.0, numpy.sum(Dtable[Ztable==v])]]), axis=0)
     
-    
     BestPositions = BestPositions[BestPositions[:, 3].argsort()][::-1]
     
     
-    jsondata['MeshBest']['BestPositions'] = base64.b64encode(BestPositions)
+    jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(BestPositions))
     numpy.savetxt('Result_BestPositions.txt', BestPositions, fmt='%0.2f')
     
 

@@ -342,5 +342,5 @@ def GetAllPositions(jsondata):
         BestPositions = numpy.append(BestPositions, ApertureCorrArray, axis=0)
 #        print '*******\n', BestPositions, '*******\n'
 
-    jsondata['MeshBest']['BestPositions'] = base64.b64encode(BestPositions)
+    jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(BestPositions))
     numpy.savetxt('Result_BestPositions.txt', BestPositions, fmt='%0.2f')
