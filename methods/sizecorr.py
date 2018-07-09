@@ -32,6 +32,17 @@ def SpotMatrix(n):
             profile[index] = 0
     return profile/numpy.sum(profile)**(0.75)
 
+def SpotMatrix_t(n1, n2):
+
+    profile = numpy.ones((2*n1+1, 2*n2+1))
+
+    for index in numpy.ndindex(numpy.shape(profile)):
+        j, i = index
+        if (((i-n1)/n1)**2+((j-n2)/n2)**2)>=1:
+            profile[index] = 0
+    return profile/numpy.sum(profile)**(0.75)
+
+
 
 def GenerateGaussian2D(x, y, mu, sigma):
     gauss = 1/(6.28*sigma**2)*numpy.exp(-( ((x-mu[0])**2+(y-mu[1])**2) / ( 2.0 * sigma**2 ) ) )
@@ -41,15 +52,15 @@ def GenerateGaussian2D(x, y, mu, sigma):
 
 def BestCorr_MP(queue):
     
-    Set = AvailableApertures
 
-    
     dx = size_x*1000
     dy = size_y*1000
     
     mind = min(dx, dy)
     maxd = max(dx, dy)
-    Set = [float(x) for x in Set if x>=mind]
+
+    
+    Set = [float(x) for x in AvailableApertures if x>=mind]
 
     while True:
         Value = queue.get()
