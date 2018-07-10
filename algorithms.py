@@ -332,7 +332,7 @@ def linescan(jsonFilePath, resultsPath=None):
     BestPositions = numpy.empty((0, 4), float)
     
     for v in numpy.unique(Ztable[Ztable>0]):
-        C = numpy.sum(numpy.where(Ztable==v)[0]*Dtable[Ztable==v])/numpy.sum(Dtable[Ztable==v])
+        C = 1 + numpy.sum(numpy.where(Ztable==v)[0]*Dtable[Ztable==v])/numpy.sum(Dtable[Ztable==v])
         BestPositions = numpy.append(BestPositions,\
                                      numpy.array([[1.0, C, -1.0, numpy.sum(Dtable[Ztable==v])]]), axis=0)
     
