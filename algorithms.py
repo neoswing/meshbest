@@ -333,8 +333,12 @@ def linescan(jsonFilePath, resultsPath=None):
     
     for v in numpy.unique(Ztable[Ztable>0]):
         C = 1 + numpy.sum(numpy.where(Ztable==v)[0]*Dtable[Ztable==v])/numpy.sum(Dtable[Ztable==v])
+        
+        eachArray = (Dtable*(Ztable==v))
+        width = numpy.mean([numpy.size(eachArray[eachArray>level])\
+                                for level in numpy.linspace(0, 0.9*numpy.max(eachArray), 10)])
         BestPositions = numpy.append(BestPositions,\
-                                     numpy.array([[1.0, C, -1.0, numpy.sum(Dtable[Ztable==v])]]), axis=0)
+                                     numpy.array([[1.0, C, width, numpy.sum(Dtable[Ztable==v])]]), axis=0)
     
     BestPositions = BestPositions[BestPositions[:, 3].argsort()][::-1]
     
@@ -350,16 +354,11 @@ def linescan(jsonFilePath, resultsPath=None):
     plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
     plt.clf()
     
-    ax1 = fig.add_subplot(111)
-    clrs = plotting.ConstructColorlist(Ztable)
-    i = 3
-    for v in numpy.unique(Ztable[Ztable>0]):
-        plt.plot(Dtable*(Ztable==v), color=clrs[3])
-        i += 1
-    
+    plotting.LinePlot(jsondata)
     plt.savefig('LineScan.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
     plt.clf()
     
+
     with open('MeshResults.json', 'w') as outfile:
         json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
     logger.debug('Checkpoint: Finish {0}s'.format('%0.3f') % (time.time() - start_time))

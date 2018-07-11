@@ -152,3 +152,33 @@ def MainPlot(jsondata, ax, addPositions=True):
                 logger.error('addPositions error: Best Positions are not communicated in the JSON')
     
 
+
+
+
+def LinePlot(jsondata):
+    
+    try:
+        row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
+        difminpar = jsondata['MeshBest']['difminpar']
+    except KeyError:
+        logger.error('Experiment parameters are not communicated in the JSON')
+        return None
+    try:
+        Dtable = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['Dtable']))
+        Dtable = numpy.reshape(Dtable, (row, col))
+        Ztable = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['Ztable']))
+        Ztable = numpy.reshape(Ztable, (row, col))
+    except KeyError:
+        logger.error('Plotting: No data to work with in the JSON')
+        return None
+    
+    basecolors = ['#FF0101', '#F5A26F', '#668DE5', '#E224DE', '#04FEFD', '#00CA02', '#FEFE00', '#0004AF', '#B5FF06']
+
+    Zunique = numpy.unique(Ztable[Ztable>0])
+    clrs = []
+    for cycle in xrange(1+len(Zunique)/9):
+        clrs = clrs + basecolors
+
+    for index in xrange(len(Zunique)):
+        plt.plot(Dtable*(Ztable==Zunique[index]), color=clrs[index])
+
