@@ -209,7 +209,8 @@ def PerformCrystalRecognition(jsondata):
                 Ztable[keys[0][0], keys[1][0]] = M+1
             else:
                 CalculateZone(jsondata, keys)
-        
+    else:
+        logger.info('Only multi-crystal diffraction found')
 
 
     jsondata['MeshBest']['Ztable'] = Ztable

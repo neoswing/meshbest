@@ -429,7 +429,7 @@ def DetermineMCdiffraction(jsondata):
 
     init_base = AMPD(numpy.max(filtered)-filtered)
     
-    if init_base!=None:
+    if init_base is not None:
         X = numpy.linspace(0.001, 0.04, 100)[init_base]
         init_array = HIST[init_base]
     

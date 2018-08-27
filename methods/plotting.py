@@ -30,7 +30,7 @@ def ConstructColorlist(array):
     for j in range(1, N + 1):
         cut = ndimage.measurements.label(array == j)
         c = signal.convolve2d(cut[0], t, mode='same')
-        adjacentvalues = numpy.unique(array[numpy.where(c != 0)])
+        adjacentvalues = numpy.unique(array[numpy.where(c != 0)]).astype('int')
 
         for i in adjacentvalues:
             if i == -1 or i == -2:
@@ -81,7 +81,11 @@ def MainPlot(jsondata, ax, addPositions=True):
     except KeyError:
         logger.error('Plotting: No data to work with in the JSON')
         return None
-
+    
+    if numpy.all(Ztable==-1):
+        logger.error('Plotting: Crystal map is empty')
+        return None
+    
     clrs = ConstructColorlist(Ztable)
 #    logger.debug('Checkpoint for colormap function:', (time.time()-start_time))
     Ncolors = len(clrs)

@@ -79,6 +79,9 @@ def simple(jsonFilePath, resultsPath=None):
     jsondata['MeshBest']['difminpar'] = difminpar
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
+    if numpy.all(Ztable==-1):
+        logger.info('No diffraction signal detected')
+        return jsondata
     
     jsondata['MeshBest']['Ztable'] = Ztable
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
@@ -88,7 +91,7 @@ def simple(jsonFilePath, resultsPath=None):
 
     dvanalysis.DetermineMCdiffraction(jsondata)
     logger.debug('Checkpoint: DV Analysis - {0}s'.format('%0.3f') % (time.time() - start_time))
-
+    
     scoring.PerformCrystalRecognition(jsondata)
     logger.debug('Checkpoint: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
 
@@ -151,6 +154,18 @@ def xraycentering(jsonFilePath, resultsPath=None):
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
     
+    if numpy.all(Ztable==-1):
+        logger.info('No diffraction signal detected')
+        
+        numpy.savetxt('Result_BestPositions.txt', [])
+        
+        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
+        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+        
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
+        
+        return jsondata
+    
     jsondata['MeshBest']['Ztable'] = Ztable
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
@@ -164,7 +179,7 @@ def xraycentering(jsonFilePath, resultsPath=None):
     logger.debug('Checkpoint: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     if numpy.all(Ztable < 0):
-        logger.debug('MeshBest terminated with no valuable signal detected')
+        logger.info('MeshBest terminated with no valuable signal detected')
         numpy.savetxt('Result_BestPositions.txt', [])
         
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
@@ -230,6 +245,19 @@ def meshandcollect(jsonFilePath, resultsPath=None):
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
     
+    if numpy.all(Ztable==-1):
+        logger.info('No diffraction signal detected')
+        
+        numpy.savetxt('Result_BestPositions.txt', [])
+        
+        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
+        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+        
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
+        
+        return jsondata
+    
+    
     jsondata['MeshBest']['Ztable'] = Ztable
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
@@ -254,7 +282,7 @@ def meshandcollect(jsonFilePath, resultsPath=None):
     else:
         sizecorr.GetAllPositions(jsondata)
         
-        logger.debug('Checkpoint: Shape Fit {0}s'.format('%0.3f') % (time.time() - start_time))
+        logger.debug('Checkpoint: Calculating positions {0}s'.format('%0.3f') % (time.time() - start_time))
 
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
         jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
