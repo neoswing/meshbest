@@ -159,8 +159,8 @@ def xraycentering(jsonFilePath, resultsPath=None):
         
         numpy.savetxt('Result_BestPositions.txt', [])
         
-        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+        jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
+        jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
         
         jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
         
@@ -250,8 +250,8 @@ def meshandcollect(jsonFilePath, resultsPath=None):
         
         numpy.savetxt('Result_BestPositions.txt', [])
         
-        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+        jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
+        jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
         
         jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
         
@@ -271,7 +271,7 @@ def meshandcollect(jsonFilePath, resultsPath=None):
     logger.debug('Checkpoint: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     if numpy.all(Ztable < 0):
-        logger.debug('MeshBest terminated with no valuable signal detected')
+        logger.info('MeshBest terminated with no valuable signal detected')
         numpy.savetxt('Result_BestPositions.txt', [])
         
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
@@ -340,6 +340,17 @@ def linescan(jsonFilePath, resultsPath=None):
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
     
+    
+    if numpy.all(Ztable==-1):
+        logger.info('MeshBest line scan terminated with no valuable signal detected')
+        numpy.savetxt('Result_BestPositions.txt', [])
+        
+        jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
+        jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
+        
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
+    
+    
     jsondata['MeshBest']['Ztable'] = Ztable
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
@@ -353,38 +364,48 @@ def linescan(jsonFilePath, resultsPath=None):
     logger.debug('Checkpoint: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     Ztable = jsondata['MeshBest']['Ztable']
-
-    jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-    jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
     
-    BestPositions = numpy.empty((0, 4), float)
-    
-    for v in numpy.unique(Ztable[Ztable>0]):
-        C = 1 + numpy.sum(numpy.where(Ztable==v)[0]*Dtable[Ztable==v])/numpy.sum(Dtable[Ztable==v])
+    if numpy.all(Ztable < 0):
+        logger.info('MeshBest line scan terminated with no valuable signal detected')
+        numpy.savetxt('Result_BestPositions.txt', [])
         
-        eachArray = (Dtable*(Ztable==v))
-        width = numpy.mean([numpy.size(eachArray[eachArray>level])\
-                                for level in numpy.linspace(0, 0.9*numpy.max(eachArray), 10)])
-        BestPositions = numpy.append(BestPositions,\
-                                     numpy.array([[1.0, C, width, numpy.sum(Dtable[Ztable==v])]]), axis=0)
+        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
+        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+        
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
     
-    BestPositions = BestPositions[BestPositions[:, 3].argsort()][::-1]
+    else:
+        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
+        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+        
+        BestPositions = numpy.empty((0, 4), float)
+        
+        for v in numpy.unique(Ztable[Ztable>0]):
+            C = 1 + numpy.sum(numpy.where(Ztable==v)[0]*Dtable[Ztable==v])/numpy.sum(Dtable[Ztable==v])
+            
+            eachArray = (Dtable*(Ztable==v))
+            width = numpy.mean([numpy.size(eachArray[eachArray>level])\
+                                    for level in numpy.linspace(0, 0.9*numpy.max(eachArray), 10)])
+            BestPositions = numpy.append(BestPositions,\
+                                         numpy.array([[1.0, C, width, numpy.sum(Dtable[Ztable==v])]]), axis=0)
+        
+        BestPositions = BestPositions[BestPositions[:, 3].argsort()][::-1]
+        
+        
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(BestPositions))
+        numpy.savetxt('Result_BestPositions.txt', BestPositions, fmt='%0.2f')
+        
     
-    
-    jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(BestPositions))
-    numpy.savetxt('Result_BestPositions.txt', BestPositions, fmt='%0.2f')
-    
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    
-    plotting.MainPlot(jsondata, ax, addPositions=False)
-    plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
-    plt.clf()
-    
-    plotting.LinePlot(jsondata)
-    plt.savefig('LineScan.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
-    plt.clf()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        
+        plotting.MainPlot(jsondata, ax, addPositions=False)
+        plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
+        plt.clf()
+        
+        plotting.LinePlot(jsondata)
+        plt.savefig('LineScan.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
+        plt.clf()
     
 
     with open('MeshResults.json', 'w') as outfile:

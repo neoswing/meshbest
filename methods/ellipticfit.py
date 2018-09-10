@@ -68,7 +68,7 @@ def FitEllipse_MP(queue):
             width = 1
             height = 1
             angle = 0
-            h = Dtable[xy[1] - 1, xy[0] - 1]
+            h = Dtable[int(xy[1]) - 1, int(xy[0]) - 1]
             Buffer[(Value - 1) * 7:Value * 7] = [Value, xy[0], xy[1], height, width, angle, h]
 
         else:

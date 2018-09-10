@@ -101,7 +101,8 @@ def MainPlot(jsondata, ax, addPositions=True):
     CrystImage = plt.imshow(Ztable, cmap=cmap, norm=norm, interpolation='nearest', origin='upper', \
                             extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
     OpacityImage = plt.imshow(Dtable, cmap=cmap2, interpolation='nearest', origin='upper', vmin=difminpar, \
-                              vmax=numpy.percentile(Dtable, 99), extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
+                              vmax=numpy.percentile(Dtable[Dtable>difminpar], 99), extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
+    
     
     opacity = 1+cmap2(Dtable)[:, :, 3]
     rgb = cmap(norm(Ztable))
