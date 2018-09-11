@@ -162,7 +162,7 @@ def xraycentering(jsonFilePath, resultsPath=None):
         jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
         jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
         
         return jsondata
     
@@ -185,7 +185,7 @@ def xraycentering(jsonFilePath, resultsPath=None):
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
         jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
 
     else:
         ellipticfit.DoEllipseFit(jsondata)
@@ -253,7 +253,7 @@ def meshandcollect(jsonFilePath, resultsPath=None):
         jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
         jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
         
         return jsondata
     
@@ -277,7 +277,7 @@ def meshandcollect(jsonFilePath, resultsPath=None):
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
         jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
 
     else:
         sizecorr.GetAllPositions(jsondata)
@@ -348,7 +348,7 @@ def linescan(jsonFilePath, resultsPath=None):
         jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
         jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
     
     
     jsondata['MeshBest']['Ztable'] = Ztable
@@ -372,7 +372,7 @@ def linescan(jsonFilePath, resultsPath=None):
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
         jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty())
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
     
     else:
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
