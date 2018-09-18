@@ -97,7 +97,8 @@ def simple(jsonFilePath, resultsPath=None):
 
     jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
     jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
-
+    jsondata['MeshBest']['positionReference'] = base64.b64encode(jsondata['MeshBest']['positionReference'])
+    
     fig = plt.figure()
     ax = fig.add_subplot(111)
     
@@ -178,18 +179,15 @@ def xraycentering(jsonFilePath, resultsPath=None):
         logger.warning('Only multi-pattern diffraction found in the scanned area')
         
         sizecorr.GetAllPositions(jsondata)
-        
-        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
 
     else:
         ellipticfit.DoEllipseFit(jsondata)
         
-        logger.debug('Checkpoint: Shape Fit {0}s'.format('%0.3f') % (time.time() - start_time))
+    logger.debug('Checkpoint: Shape Fit {0}s'.format('%0.3f') % (time.time() - start_time))
 
-        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
-
+    jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
+    jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+    jsondata['MeshBest']['positionReference'] = base64.b64encode(jsondata['MeshBest']['positionReference'])
     fig = plt.figure()
     ax = fig.add_subplot(111)
         
@@ -275,7 +273,7 @@ def meshandcollect(jsonFilePath, resultsPath=None):
 
     jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
     jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
-
+    jsondata['MeshBest']['positionReference'] = base64.b64encode(jsondata['MeshBest']['positionReference'])
     fig = plt.figure()
     ax = fig.add_subplot(111)
     
@@ -378,7 +376,7 @@ def linescan(jsonFilePath, resultsPath=None):
     
     jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
     jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
-    
+    jsondata['MeshBest']['positionReference'] = base64.b64encode(jsondata['MeshBest']['positionReference'])
     jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(BestPositions))
     numpy.savetxt('Result_BestPositions.txt', BestPositions, fmt='%0.2f')
         
@@ -461,11 +459,7 @@ def hamburg(jsonFilePath, process_data=False, resultsPath=None):
     if numpy.all(jsondata['MeshBest']['Ztable'] < 0):
         logger.info('Only multi-pattern diffraction found in the scanned area')
         
-        C = 1 + numpy.sum(numpy.where(Ztable==-2)[0]*Dtable[Ztable==-2])/numpy.sum(Dtable[Ztable==-2])
-        width = numpy.mean([numpy.size(Dtable[Dtable>level])\
-                                    for level in numpy.linspace(0, 0.9*numpy.max(Dtable), 10)])
-        
-        BestPositions = numpy.array([[1.0, C, width, numpy.sum(Dtable)/100.0]])
+        print 'hello'
     
     
 
@@ -479,51 +473,43 @@ def hamburg(jsonFilePath, process_data=False, resultsPath=None):
 
         
         
-        positionReference = numpy.empty((row, col), dtype='int')
-        for i in jsondata['meshPositions']:
-            positionReference[i['indexZ'], i['indexY']] = i['index']
-
-        
-        listOfEdges = []
-
-        #Omega check
-        if round(jsondata['meshPositions'][1]['omega']-jsondata['meshPositions'][0]['omega'], 2)==0:
-            logger.debug('Omega is not changed during the mesh scan')
-            with open('MeshResults.json', 'w') as outfile:
-                json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
-            sys.exit()
-        
-
-        Z = 0
-        first = -1
-        last = -1
-        for line in xrange(row):
-            for element in xrange(col):
-                if Ztable[line, element]==Z:
-                    last = positionReference[line, element]
-                else:
-                    Z = 0
-                    if last!=-1:
-                        listOfEdges.append((first, last))
-                        first = -1
-                        last = -1
-                    if Ztable[line, element]>0:
-                        first = positionReference[line, element]
-                        last = positionReference[line, element]
-                        Z = Ztable[line, element]
-            Z = 0
-            first = -1
-            last = -1
-        
-        
-        
-        with open('MeshResults.json', 'w') as outfile:
-            json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
-
-        logger.debug('Checkpoint: Finish {0}s'.format('%0.3f') % (time.time() - start_time))
-        
-        return listOfEdges
-        
+#        positionReference = numpy.empty((row, col), dtype='int')
+#        for i in jsondata['meshPositions']:
+#            positionReference[i['indexZ'], i['indexY']] = i['index']
+#
+#        
+#        listOfEdges = []
+#
+#        Z = 0
+#        first = -1
+#        last = -1
+#        for line in xrange(row):
+#            for element in xrange(col):
+#                if Ztable[line, element]==Z:
+#                    last = positionReference[line, element]
+#                else:
+#                    Z = 0
+#                    if last!=-1:
+#                        listOfEdges.append((first, last))
+#                        first = -1
+#                        last = -1
+#                    if Ztable[line, element]>0:
+#                        first = positionReference[line, element]
+#                        last = positionReference[line, element]
+#                        Z = Ztable[line, element]
+#            Z = 0
+#            first = -1
+#            last = -1
+#        
+#        
+#        
+#        with open('MeshResults.json', 'w') as outfile:
+#            json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
+#
+#        logger.debug('Checkpoint: Finish {0}s'.format('%0.3f') % (time.time() - start_time))
+#        
+#        return listOfEdges
+#        
 
 
 

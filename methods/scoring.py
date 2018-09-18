@@ -101,13 +101,8 @@ def CalculateZone(jsondata, keys):
     Buffer = mp.RawArray(ctypes.c_double, L * L)
     nCPU = mp.cpu_count()
     queue = mp.Queue()
-    col = jsondata['grid_info']['steps_x']
-    row = jsondata['grid_info']['steps_y']
-    positionReference = numpy.empty((row, col), dtype='int')
+    positionReference = jsondata['MeshBest']['positionReference']
     
-    for i in jsondata['meshPositions']:
-        positionReference[i['indexZ'], i['indexY']] = i['index']
-
     for i in xrange(L):
         for j in range(i + 1, L):
             keyi, keyj = positionReference[keys[0][i], keys[1][i]], positionReference[keys[0][j], keys[1][j]]

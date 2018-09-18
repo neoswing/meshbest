@@ -164,8 +164,8 @@ def BestCorr_MP(queue):
             
             ResultArray = numpy.zeros((len(peaks), 4))
             for n in xrange(len(peaks)):
-                X = peaks[n][0]/10.0 + Xlimits[0] - 0.5
-                Y = peaks[n][1]/10.0 + Ylimits[0] - 0.5
+                X = peaks[n][0]/(10.0*(dx/mind)) + Xlimits[0] - 0.5
+                Y = peaks[n][1]/(10.0*(dy/mind)) + Ylimits[0] - 0.5
                 size = peaks[n][2]/mind
 
                 ResultArray[n, :3] = numpy.array([X, Y, size])

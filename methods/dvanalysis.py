@@ -458,14 +458,12 @@ def DetermineMCdiffraction(jsondata):
         
         
         MXDiff = numpy.frombuffer(Buffer)
-        MXDiff = MXDiff.reshape(row, col)
         Buffer = 0
-        
-        
         jsondata['MeshBest']['MXDiff'] = base64.b64encode(MXDiff)
         
-        jsondata['MeshBest']['Ztable'][MXDiff==1] = -2
-        
+        for key, value in numpy.ndenumerate(jsondata['MeshBest']['positionReference']):
+            if MXDiff[value]:
+                jsondata['MeshBest']['Ztable'][key] = -2
         
     else:
         logger.error('AMPD: Too little data to estimate histogram baseline')

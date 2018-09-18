@@ -4,8 +4,10 @@ Created on Sep 11, 2018
 @author: melnikov
 '''
 
+import numpy
 import json
 import os
+
 
 
 try:
@@ -112,13 +114,24 @@ def check(jsonFilePath, jobtype='simple'):
             logger.error('MeshBest linescan method is used not in line scan')
             check = False
     
+    if jobtype=='hamburg' and check:
+        if round(jsondata['meshPositions'][1]['omega']-jsondata['meshPositions'][0]['omega'], 2)==0:
+            logger.error('Omega is not changed during the mesh scan')
+            check = False
+    
+    
     
     
     with open('check.json', 'w') as outfile:
         json.dump(runreport, outfile, sort_keys=True, indent=4, ensure_ascii=False)
     
     if check:
-        jsondata['MeshBest'] = {'type': jobtype, 'check': True, 'difminpar': difminpar}
+        positionReference = numpy.empty((runreport['Nrows'], runreport['Ncolumns']), dtype='int')
+        for i in jsondata['meshPositions']:
+            positionReference[i['indexZ'], i['indexY']] = i['index']
+            
+        jsondata['MeshBest'] = {'type': jobtype, 'check': True,\
+                                'difminpar': difminpar, 'positionReference': positionReference}
         return jsondata
     else:
         return False
