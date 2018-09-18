@@ -24,7 +24,7 @@ import methods
 
 
 
-__version__ = 'X'
+__version__ = '10.1'
 
 __author__ = 'Dr. Igor Melnikov (igor.melnikov@esrf.fr)'
 

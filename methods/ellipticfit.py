@@ -133,12 +133,9 @@ def DoEllipseFit(jsondata):
         Dtable = jsondata['MeshBest']['Dtable']
         Ztable = jsondata['MeshBest']['Ztable']
     except KeyError:
-        logger.error('Ellipse fit: No data to work with in the JSON')
+        logger.error('jsondata misses precedent MeshBest steps')
         return None
-    
-    if numpy.all(Ztable<0):
-        logger.error('Ellipse fit: No signal in the mesh scan')
-        return None
+
     
     improvedZ = numpy.zeros((numpy.shape(Ztable)[0] + 2, numpy.shape(Ztable)[1] + 2))
     improvedD = numpy.zeros((numpy.shape(Ztable)[0] + 2, numpy.shape(Ztable)[1] + 2))
@@ -179,6 +176,8 @@ def DoEllipseFit(jsondata):
     BestPositions = numpy.array(EllipseArray)[:, :4]
     BestPositions[:, 2] = EllipseArray[:, 3]
     BestPositions[:, 3] = EllipseArray[:, 5]*EllipseArray[:, 3]/EllipseArray[:, 2]
+    
+    BestPositions = BestPositions[BestPositions[:, 3].argsort()][::-1]
     
     jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(BestPositions))
     numpy.savetxt('Result_BestPositions.txt', BestPositions, fmt='%0.2f')

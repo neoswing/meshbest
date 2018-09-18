@@ -337,12 +337,8 @@ def OverlapCheck_MP(queue, base_regions):
 
 
 def EliminateSaltRings(jsondata):
-    try:
-        BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
-    except KeyError:
-        logger.error('Beam Center is not defined in the JSON')
-        return None
-
+    
+    BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
     
     manager = mp.Manager()
     Buffer = manager.dict()
@@ -378,16 +374,13 @@ def DetermineMCdiffraction(jsondata):
     Buffer = manager.dict()
     nCPU = mp.cpu_count()
     queue = mp.Queue()
-    
-    try:
-        Wavelength = jsondata['inputDozor']['wavelength']
-        DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
-        BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
-        DetectorPixel = jsondata['beamlineInfo']['detectorPixelSize']*1000
-        row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
-    except KeyError:
-        logger.error('Experiment parameters are not communicated in the JSON')
-        return None
+
+    Wavelength = jsondata['inputDozor']['wavelength']
+    DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
+    BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
+    DetectorPixel = jsondata['beamlineInfo']['detectorPixelSize']*1000
+    row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
+
 
     for item in jsondata['meshPositions']:
         queue.put(item)

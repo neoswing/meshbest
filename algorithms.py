@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 
 
-from meshbest.methods import dvanalysis, scoring, ellipticfit, sizecorr, plotting
+from meshbest.methods import jsoncheck, dvanalysis, scoring, plotting, ellipticfit, sizecorr
 
 try:
     from workflow_lib import workflow_logging
@@ -46,13 +46,17 @@ def simple(jsonFilePath, resultsPath=None):
     if resultsPath!=None:
         os.chdir(resultsPath)
     
-    difminpar = 0.2
-    
     logger.debug('Checkpoint: Start - {0}s'.format('%0.3f') % (time.time() - start_time))
-
-    json_file = open(jsonFilePath, 'r')
-    jsondata = json.load(json_file)
-    json_file.close()
+    
+    jsondata = jsoncheck.check(jsonFilePath, jobtype='simple')
+    
+    if jsondata==False:
+        logger.error('Input json file not accepted, see check.json for details')
+        return False
+    
+    logger.debug('Checkpoint: JsonCheck - {0}s'.format('%0.3f') % (time.time() - start_time))
+    
+    
     
     row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
     Dtable = numpy.zeros((row, col))
@@ -62,8 +66,6 @@ def simple(jsonFilePath, resultsPath=None):
         j = item['indexZ']
         Dtable[j, i] = item['dozor_score']
     
-    
-    jsondata['MeshBest'] = {'type': 'simple'}
     jsondata['MeshBest']['Dtable'] = Dtable
     numpy.savetxt('Dtable.txt', Dtable, fmt='%0.2f')
     plt.imshow(Dtable, cmap='hot', interpolation='nearest', origin='upper', extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
@@ -71,19 +73,17 @@ def simple(jsonFilePath, resultsPath=None):
     plt.savefig('Dtable.png', dpi=300, transparent=True, bbox_inches='tight')  # , pad_inches=0)
     plt.close()
     
-#    jsondata['beamlineInfo'] = {}
-#    jsondata['beamlineInfo']['detectorPixelSize'] = 172
-#    jsondata['beamlineInfo']['beamlineApertures'] = [10, 20, 30, 45]
     
     
-    jsondata['MeshBest']['difminpar'] = difminpar
+    difminpar = jsondata['MeshBest']['difminpar']
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
+    jsondata['MeshBest']['Ztable'] = Ztable
     if numpy.all(Ztable==-1):
-        logger.info('No diffraction signal detected')
+        logger.info('Diffraction signal is very weak for MeshBest')
+
         return jsondata
     
-    jsondata['MeshBest']['Ztable'] = Ztable
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     dvanalysis.EliminateSaltRings(jsondata)
@@ -118,14 +118,18 @@ def xraycentering(jsonFilePath, resultsPath=None):
     if resultsPath!=None:
         os.chdir(resultsPath)
     
-    difminpar = 0.2
-    
     logger.debug('Checkpoint: Start - {0}s'.format('%0.3f') % (time.time() - start_time))
-
-    json_file = open(jsonFilePath, 'r')
-    jsondata = json.load(json_file)
-    json_file.close()
     
+    jsondata = jsoncheck.check(jsonFilePath, jobtype='xraycentering')
+    
+    if jsondata==False:
+        logger.error('Input json file not accepted, see check.json for details')
+        return False
+    
+    logger.debug('Checkpoint: JsonCheck - {0}s'.format('%0.3f') % (time.time() - start_time))
+
+
+
     row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
     Dtable = numpy.zeros((row, col))
 
@@ -133,9 +137,7 @@ def xraycentering(jsonFilePath, resultsPath=None):
         i = item['indexY']
         j = item['indexZ']
         Dtable[j, i] = item['dozor_score']
-    
-    
-    jsondata['MeshBest'] = {'type': 'xraycentering'}
+
     jsondata['MeshBest']['Dtable'] = Dtable
     numpy.savetxt('Dtable.txt', Dtable, fmt='%0.2f')
     plt.imshow(Dtable, cmap='hot', interpolation='nearest', origin='upper', extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
@@ -143,30 +145,24 @@ def xraycentering(jsonFilePath, resultsPath=None):
     plt.savefig('Dtable.png', dpi=300, transparent=True, bbox_inches='tight')  # , pad_inches=0)
     plt.close()
 
-#    jsondata['beamlineInfo'] = {}
-#    jsondata['beamlineInfo']['detectorPixelSize'] = 172
-#    jsondata['beamlineInfo']['beamlineApertures'] = [10, 20, 30, 45]
 
 
-
-
-    jsondata['MeshBest']['difminpar'] = difminpar
+    difminpar = jsondata['MeshBest']['difminpar']
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
-    
+    jsondata['MeshBest']['Ztable'] = Ztable
     if numpy.all(Ztable==-1):
-        logger.info('No diffraction signal detected')
+        logger.info('Diffraction signal is very weak for MeshBest')
         
         numpy.savetxt('Result_BestPositions.txt', [])
-        
+
         jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
         jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(numpy.empty((0, 4), float)))
         
         return jsondata
-    
-    jsondata['MeshBest']['Ztable'] = Ztable
+
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     dvanalysis.EliminateSaltRings(jsondata)
@@ -178,14 +174,13 @@ def xraycentering(jsonFilePath, resultsPath=None):
     scoring.PerformCrystalRecognition(jsondata)
     logger.debug('Checkpoint: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
     
-    if numpy.all(Ztable < 0):
-        logger.info('MeshBest terminated with no valuable signal detected')
-        numpy.savetxt('Result_BestPositions.txt', [])
+    if numpy.all(jsondata['MeshBest']['Ztable'] < 0):
+        logger.warning('Only multi-pattern diffraction found in the scanned area')
+        
+        sizecorr.GetAllPositions(jsondata)
         
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
         jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
-        
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
 
     else:
         ellipticfit.DoEllipseFit(jsondata)
@@ -195,11 +190,11 @@ def xraycentering(jsonFilePath, resultsPath=None):
         jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
         jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
         
-        plotting.MainPlot(jsondata, ax)
-        plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight')  # , pad_inches=0)
+    plotting.MainPlot(jsondata, ax)
+    plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight')  # , pad_inches=0)
         
     with open('MeshResults.json', 'w') as outfile:
         json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
@@ -215,14 +210,18 @@ def meshandcollect(jsonFilePath, resultsPath=None):
     if resultsPath!=None:
         os.chdir(resultsPath)
     
-    difminpar = 0.2
-    
     logger.debug('Checkpoint: Start - {0}s'.format('%0.3f') % (time.time() - start_time))
-
-    json_file = open(jsonFilePath, 'r')
-    jsondata = json.load(json_file)
-    json_file.close()
     
+    jsondata = jsoncheck.check(jsonFilePath, jobtype='meshandcollect')
+    
+    if jsondata==False:
+        logger.error('Input json file not accepted, see check.json for details')
+        return False
+    
+    logger.debug('Checkpoint: JsonCheck - {0}s'.format('%0.3f') % (time.time() - start_time))
+
+
+
     row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
     Dtable = numpy.zeros((row, col))
 
@@ -231,8 +230,6 @@ def meshandcollect(jsonFilePath, resultsPath=None):
         j = item['indexZ']
         Dtable[j, i] = item['dozor_score']
     
-    
-    jsondata['MeshBest'] = {'type': 'meshandcollect'}
     jsondata['MeshBest']['Dtable'] = Dtable
     numpy.savetxt('Dtable.txt', Dtable, fmt='%0.2f')
     plt.imshow(Dtable, cmap='hot', interpolation='nearest', origin='upper', extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
@@ -240,25 +237,24 @@ def meshandcollect(jsonFilePath, resultsPath=None):
     plt.savefig('Dtable.png', dpi=300, transparent=True, bbox_inches='tight')  # , pad_inches=0)
     plt.close()
     
+    
 
-    jsondata['MeshBest']['difminpar'] = difminpar
+    difminpar = jsondata['MeshBest']['difminpar']
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
-    
+    jsondata['MeshBest']['Ztable'] = Ztable
     if numpy.all(Ztable==-1):
-        logger.info('No diffraction signal detected')
+        logger.info('Diffraction signal is very weak for MeshBest')
         
         numpy.savetxt('Result_BestPositions.txt', [])
         
         jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
         jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(numpy.empty((0, 4), float)))
         
         return jsondata
     
-    
-    jsondata['MeshBest']['Ztable'] = Ztable
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     dvanalysis.EliminateSaltRings(jsondata)
@@ -270,28 +266,21 @@ def meshandcollect(jsonFilePath, resultsPath=None):
     scoring.PerformCrystalRecognition(jsondata)
     logger.debug('Checkpoint: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
     
-    if numpy.all(Ztable < 0):
-        logger.info('MeshBest terminated with no valuable signal detected')
-        numpy.savetxt('Result_BestPositions.txt', [])
-        
-        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
-        
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
+    if numpy.all(jsondata['MeshBest']['Ztable'] < 0):
+        logger.warning('Only multi-pattern diffraction found in the scanned area')
 
-    else:
-        sizecorr.GetAllPositions(jsondata)
-        
-        logger.debug('Checkpoint: Calculating positions {0}s'.format('%0.3f') % (time.time() - start_time))
+    sizecorr.GetAllPositions(jsondata)
+    
+    logger.debug('Checkpoint: Calculating positions {0}s'.format('%0.3f') % (time.time() - start_time))
 
-        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+    jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
+    jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        
-        plotting.MainPlot(jsondata, ax)
-        plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight')  # , pad_inches=0)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    
+    plotting.MainPlot(jsondata, ax)
+    plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight')  # , pad_inches=0)
         
     with open('MeshResults.json', 'w') as outfile:
         json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
@@ -307,51 +296,51 @@ def linescan(jsonFilePath, resultsPath=None):
     if resultsPath!=None:
         os.chdir(resultsPath)
     
-    difminpar = 0.2
-    
     logger.debug('Checkpoint: Start - {0}s'.format('%0.3f') % (time.time() - start_time))
-
-    json_file = open(jsonFilePath, 'r')
-    jsondata = json.load(json_file)
-    json_file.close()
+    
+    jsondata = jsoncheck.check(jsonFilePath, jobtype='linescan')
+    
+    if jsondata==False:
+        logger.error('Input json file not accepted, see check.json for details')
+        return False
+    
+    logger.debug('Checkpoint: JsonCheck - {0}s'.format('%0.3f') % (time.time() - start_time))
+    
+    
     
     row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
-    if col != 1:
-        logger.debug('MeshBest linescan method is used not in line scan')
-        return {}
-    
     Dtable = numpy.zeros((row, col))
     for item in jsondata['meshPositions']:
         i = item['indexY']
         j = item['indexZ']
         Dtable[j, i] = item['dozor_score']
-    
-    
-    jsondata['MeshBest'] = {'type': 'linescan'}
+
     jsondata['MeshBest']['Dtable'] = Dtable
     numpy.savetxt('Dtable.txt', Dtable, fmt='%0.2f')
-    plt.imshow(Dtable, cmap='hot', interpolation='nearest', origin='upper', extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
+    plt.imshow(Dtable, cmap='hot', interpolation='nearest', origin='upper',\
+               extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
     plt.colorbar()
     plt.savefig('Dtable.png', dpi=300, transparent=True, bbox_inches='tight')  # , pad_inches=0)
     plt.close()
     
+    
 
-    jsondata['MeshBest']['difminpar'] = difminpar
+    difminpar = jsondata['MeshBest']['difminpar']
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
-    
-    
+    jsondata['MeshBest']['Ztable'] = Ztable
     if numpy.all(Ztable==-1):
-        logger.info('MeshBest line scan terminated with no valuable signal detected')
+        logger.info('Diffraction signal is very weak for MeshBest line scan')
+        
         numpy.savetxt('Result_BestPositions.txt', [])
         
         jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
         jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
-    
-    
-    jsondata['MeshBest']['Ztable'] = Ztable
+        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(numpy.empty((0, 4), float)))
+        
+        return jsondata
+
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     dvanalysis.EliminateSaltRings(jsondata)
@@ -363,21 +352,16 @@ def linescan(jsonFilePath, resultsPath=None):
     scoring.PerformCrystalRecognition(jsondata)
     logger.debug('Checkpoint: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
     
-    Ztable = jsondata['MeshBest']['Ztable']
-    
-    if numpy.all(Ztable < 0):
-        logger.info('MeshBest line scan terminated with no valuable signal detected')
-        numpy.savetxt('Result_BestPositions.txt', [])
+    if numpy.all(jsondata['MeshBest']['Ztable'] < 0):
+        logger.info('Only multi-pattern diffraction found in the scanned area')
         
-        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+        C = 1 + numpy.sum(numpy.where(Ztable==-2)[0]*Dtable[Ztable==-2])/numpy.sum(Dtable[Ztable==-2])
+        width = numpy.mean([numpy.size(Dtable[Dtable>level])\
+                                    for level in numpy.linspace(0, 0.9*numpy.max(Dtable), 10)])
         
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.empty(4))
-    
+        BestPositions = numpy.array([[1.0, C, width, numpy.sum(Dtable)/100.0]])
+
     else:
-        jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-        jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
-        
         BestPositions = numpy.empty((0, 4), float)
         
         for v in numpy.unique(Ztable[Ztable>0]):
@@ -391,21 +375,24 @@ def linescan(jsonFilePath, resultsPath=None):
         
         BestPositions = BestPositions[BestPositions[:, 3].argsort()][::-1]
         
-        
-        jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(BestPositions))
-        numpy.savetxt('Result_BestPositions.txt', BestPositions, fmt='%0.2f')
+    
+    jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
+    jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
+    
+    jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(BestPositions))
+    numpy.savetxt('Result_BestPositions.txt', BestPositions, fmt='%0.2f')
         
     
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        
-        plotting.MainPlot(jsondata, ax, addPositions=False)
-        plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
-        plt.clf()
-        
-        plotting.LinePlot(jsondata)
-        plt.savefig('LineScan.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
-        plt.clf()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    
+    plotting.MainPlot(jsondata, ax, addPositions=False)
+    plt.savefig('CrystalMesh.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
+    plt.clf()
+    
+    plotting.LinePlot(jsondata)
+    plt.savefig('LineScan.png', dpi=150, transparent=True, bbox_inches='tight', pad_inches=0)
+    plt.clf()
     
 
     with open('MeshResults.json', 'w') as outfile:
@@ -421,14 +408,18 @@ def hamburg(jsonFilePath, process_data=False, resultsPath=None):
     
     if resultsPath!=None:
         os.chdir(resultsPath)
-    
-    difminpar = 0.2
-    
-    logger.debug('Checkpoint: Start - {0}s'.format('%0.3f') % (time.time() - start_time))
 
-    json_file = open(jsonFilePath, 'r')
-    jsondata = json.load(json_file)
-    json_file.close()
+    logger.debug('Checkpoint: Start - {0}s'.format('%0.3f') % (time.time() - start_time))
+    
+    jsondata = jsoncheck.check(jsonFilePath, jobtype='hamburg')
+    
+    if jsondata==False:
+        logger.error('Input json file not accepted, see check.json for details')
+        return False
+    
+    logger.debug('Checkpoint: JsonCheck - {0}s'.format('%0.3f') % (time.time() - start_time))
+    
+    
     
     row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
     Dtable = numpy.zeros((row, col))
@@ -437,20 +428,28 @@ def hamburg(jsonFilePath, process_data=False, resultsPath=None):
         i = item['indexY']
         j = item['indexZ']
         Dtable[j, i] = item['dozor_score']
-        
-    jsondata['MeshBest'] = {'type': 'hamburg'}
-    jsondata['MeshBest']['Dtable'] = Dtable
 
-    plt.imshow(Dtable, cmap='hot', interpolation='nearest', origin='upper', extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
+    jsondata['MeshBest']['Dtable'] = Dtable
+    numpy.savetxt('Dtable.txt', Dtable, fmt='%0.2f')
+    jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
+    plt.imshow(Dtable, cmap='hot', interpolation='nearest', origin='upper',\
+               extent=[0.5, (col + 0.5), (row + 0.5), 0.5])
     plt.colorbar()
     plt.savefig('Dtable.png', dpi=300, transparent=True, bbox_inches='tight')  # , pad_inches=0)
     plt.close()
     
-    jsondata['MeshBest']['difminpar'] = difminpar
+    difminpar = jsondata['MeshBest']['difminpar']
     Ztable = numpy.zeros((row, col))
     Ztable[Dtable<difminpar] = -1
-    
     jsondata['MeshBest']['Ztable'] = Ztable
+    if numpy.all(Ztable==-1):
+        logger.info('Diffraction signal is very weak for MeshBest')
+
+        jsondata['MeshBest']['Dtable'] = base64.b64encode(Dtable)
+        jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
+        
+        return jsondata
+
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
     
     dvanalysis.EliminateSaltRings(jsondata)
@@ -459,24 +458,22 @@ def hamburg(jsonFilePath, process_data=False, resultsPath=None):
     dvanalysis.DetermineMCdiffraction(jsondata)
     logger.debug('Checkpoint: DV Analysis - {0}s'.format('%0.3f') % (time.time() - start_time))
 
-    scoring.PerformCrystalRecognition(jsondata)
-    logger.debug('Checkpoint: Crystal recognition - {0}s'.format('%0.3f') % (time.time() - start_time))
-
-    jsondata['MeshBest']['Dtable'] = base64.b64encode(jsondata['MeshBest']['Dtable'])
-    jsondata['MeshBest']['Ztable'] = base64.b64encode(jsondata['MeshBest']['Ztable'])
-
-    if numpy.all(Ztable < 0):
-        logger.debug('MeshBest terminated with no valuable signal detected')
-        with open('MeshResults.json', 'w') as outfile:
-            json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
-
+    if numpy.all(jsondata['MeshBest']['Ztable'] < 0):
+        logger.info('Only multi-pattern diffraction found in the scanned area')
         
-    else:
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        plotting.MainPlot(jsondata, ax, addPositions=False)
-        plt.savefig('HambMesh.png', dpi=150, transparent=True, bbox_inches='tight')  # , pad_inches=0)
-        plt.close()
+        C = 1 + numpy.sum(numpy.where(Ztable==-2)[0]*Dtable[Ztable==-2])/numpy.sum(Dtable[Ztable==-2])
+        width = numpy.mean([numpy.size(Dtable[Dtable>level])\
+                                    for level in numpy.linspace(0, 0.9*numpy.max(Dtable), 10)])
+        
+        BestPositions = numpy.array([[1.0, C, width, numpy.sum(Dtable)/100.0]])
+    
+    
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plotting.MainPlot(jsondata, ax, addPositions=False)
+    plt.savefig('HambMesh.png', dpi=150, transparent=True, bbox_inches='tight')  # , pad_inches=0)
+    plt.close()
         
         
 

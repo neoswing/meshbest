@@ -183,17 +183,13 @@ def CalculateZone(jsondata, keys):
 
 def PerformCrystalRecognition(jsondata):
     global Wavelength, DetectorDistance, BeamCenter, DetectorPixel, Ztable
-
-    try:
-        Wavelength = jsondata['inputDozor']['wavelength']
-        DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
-        BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
-        DetectorPixel = jsondata['beamlineInfo']['detectorPixelSize']*1000
-        Ztable = jsondata['MeshBest']['Ztable']
-    except KeyError:
-        logger.error('Experiment parameters (Wavelength, DetectorDistance, BeamCenter) \
-        are not communicated in the JSON')
-        return None
+    
+    Wavelength = jsondata['inputDozor']['wavelength']
+    DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
+    BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
+    DetectorPixel = jsondata['beamlineInfo']['detectorPixelSize']*1000
+    
+    Ztable = jsondata['MeshBest']['Ztable']
 
     if numpy.size(Ztable[Ztable == 0]) == 1:
         Ztable[Ztable == 0] = 1
