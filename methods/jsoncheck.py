@@ -26,7 +26,8 @@ def check(jsonFilePath, jobtype='simple'):
     check = True
     runreport = {}
     difminpar = 0.2
-
+    jsondata = {}
+    
     if os.path.isfile(jsonFilePath):
         json_file = open(jsonFilePath, 'r')
         jsondata = json.load(json_file)
