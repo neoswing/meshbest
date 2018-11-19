@@ -85,6 +85,9 @@ def MainPlot(jsondata, ax, addPositions=True):
     if numpy.all(Ztable==-1):
         logger.error('Plotting: Crystal map is empty')
         return None
+    elif numpy.all(Ztable<0):
+        logger.info('Plotting: Only crystal overlaps were found')
+        return None
     
     clrs = ConstructColorlist(Ztable)
 #    logger.debug('Checkpoint for colormap function:', (time.time()-start_time))

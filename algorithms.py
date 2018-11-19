@@ -160,7 +160,9 @@ def xraycentering(jsonFilePath, resultsPath=None):
         jsondata['MeshBest']['Ztable'] = base64.b64encode(Ztable)
         
         jsondata['MeshBest']['BestPositions'] = base64.b64encode(numpy.ascontiguousarray(numpy.empty((0, 4), float)))
-        
+        with open('MeshResults.json', 'w') as outfile:
+            json.dump(jsondata, outfile, sort_keys=True, indent=4, ensure_ascii=False)
+            logger.debug('Checkpoint: Finish {0}s'.format('%0.3f') % (time.time() - start_time))
         return jsondata
 
     logger.debug('Checkpoint: Initial data acquired - {0}s'.format('%0.3f') % (time.time() - start_time))
@@ -528,7 +530,8 @@ def threedcentering(jsonFilePath1, jsonFilePath2, jsonFilePath3=None, jsonFilePa
     
     Dtable1 = numpy.fromstring(base64.b64decode(jsondata1['MeshBest']['Dtable']))
     Dtable1 = numpy.reshape(Dtable1, (jsondata1['grid_info']['steps_y'], jsondata1['grid_info']['steps_x']))
-    Dtable1 = Dtable1>0.3
+    if numpy.all(Dtable1<=0.3):
+        return None
     
     fi1 = jsondata1['meshPositions'][0]['omega']
     
@@ -538,7 +541,8 @@ def threedcentering(jsonFilePath1, jsonFilePath2, jsonFilePath3=None, jsonFilePa
     
     Dtable2 = numpy.fromstring(base64.b64decode(jsondata2['MeshBest']['Dtable']))
     Dtable2 = numpy.reshape(Dtable2, (jsondata2['grid_info']['steps_y'], jsondata2['grid_info']['steps_x']))
-    Dtable2 = Dtable2>0.3
+    if numpy.all(Dtable2<=0.3):
+        return None
     
     fi2 = jsondata2['meshPositions'][0]['omega']
 
@@ -549,7 +553,8 @@ def threedcentering(jsonFilePath1, jsonFilePath2, jsonFilePath3=None, jsonFilePa
         
         Dtable3 = numpy.fromstring(base64.b64decode(jsondata3['MeshBest']['Dtable']))
         Dtable3 = numpy.reshape(Dtable3, (jsondata3['grid_info']['steps_y'], jsondata3['grid_info']['steps_x']))
-        Dtable3 = Dtable3>0.3
+        if numpy.all(Dtable3<=0.3):
+            return None
         
         fi3 = jsondata3['meshPositions'][0]['omega']
 
@@ -559,15 +564,16 @@ def threedcentering(jsonFilePath1, jsonFilePath2, jsonFilePath3=None, jsonFilePa
         
         Dtable4 = numpy.fromstring(base64.b64decode(jsondata4['MeshBest']['Dtable']))
         Dtable4 = numpy.reshape(Dtable4, (jsondata4['grid_info']['steps_y'], jsondata4['grid_info']['steps_x']))
-        Dtable4 = Dtable4>0.3
+        if numpy.all(Dtable4<=0.3):
+            return None
         
         fi4 = jsondata4['meshPositions'][0]['omega']
         
         fi_list = [fi1, fi2, fi3, fi4]
         
-        coordinates = voxelise.voxelCoordinates(Dtable1, Dtable2, Dtable3, Dtable4, fi_list)
-
-        return coordinates
+        Cmass = voxelise.CenterOfMass(Dtable1, Dtable2, Dtable3, Dtable4, fi_list)
+        return Cmass
+    
     else:
         C1 = ndimage.measurements.center_of_mass(Dtable1)
         C2 = ndimage.measurements.center_of_mass(Dtable2)
