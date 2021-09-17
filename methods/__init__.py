@@ -18,6 +18,11 @@
 #    in the sample area we try to implement zone-size correlation to adapt the appropriate aperture size
 #Input parameters are assembled together
 #Modified linkage for clustering
+#v11
+#moved to python 3 syntax
+#code optimisation to speed up calculations
+
+
 '''
 ###################################################################################################################
 ###################################################################################################################
@@ -36,10 +41,5 @@
 #################################################            ######################################################
 ###################################################################################################################
 '''
-
-import dvanalysis
-import scoring
-import plotting
-import ellipticfit
-import sizecorr
+from meshbest.methods import dvanalysis, scoring, plotting, ellipticfit, sizecorr
 

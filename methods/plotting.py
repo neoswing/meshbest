@@ -21,7 +21,7 @@ except:
     
 
 def ConstructColorlist(array):
-    basecolors = ['#FF0101', '#F5A26F', '#668DE5', '#E224DE', '#04FEFD', '#00CA02', '#FEFE00', '#0004AF', '#B5FF06']
+    basecolors = [u'#FF0101', u'#F5A26F', u'#668DE5', u'#E224DE', u'#04FEFD', u'#00CA02', u'#FEFE00', u'#0004AF', u'#B5FF06']
 
     N = int(numpy.max(array))
     AdjacentArray = numpy.identity(N)
@@ -42,7 +42,7 @@ def ConstructColorlist(array):
     AdjacentArray = Adjacent_NULL
 
     ColorVector = numpy.ones(N)
-    for i in xrange(N):
+    for i in range(N):
         BannedColors = numpy.unique(AdjacentArray[i, :])[1:]
         for item in BannedColors:
             t.remove(item)
@@ -52,11 +52,11 @@ def ConstructColorlist(array):
     ColorVector = ColorVector.astype(int)
 
 #    random.shuffle(basecolors)
-    Colors = ColorVector.astype('a7')
-    for i in xrange(N):
+    Colors = ColorVector.astype(str)
+    for i in range(N):
         Colors[i] = basecolors[ColorVector[i] - 1]
 
-    clrs = [(0.3, 0.3, 0.3), 'black', 'black']
+    clrs = ['grey', 'black', 'black']
     clrs.extend(Colors.tolist())
 
     return clrs
@@ -68,16 +68,16 @@ def ConstructColorlist(array):
 def MainPlot(jsondata, ax, addPositions=True):
     
     try:
-        row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
+        row, col = jsondata['steps_y'], jsondata['steps_x']
         difminpar = jsondata['MeshBest']['difminpar']
     except KeyError:
         logger.error('Experiment parameters are not communicated in the JSON')
         return None
     try:
         Dtable = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['Dtable']))
-        Dtable = numpy.reshape(Dtable, (row, col))
+        Dtable = Dtable.reshape((row, col))
         Ztable = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['Ztable']))
-        Ztable = numpy.reshape(Ztable, (row, col))
+        Ztable = Ztable.reshape((row, col))
     except KeyError:
         logger.error('Plotting: No data to work with in the JSON')
         return None
@@ -90,9 +90,11 @@ def MainPlot(jsondata, ax, addPositions=True):
         return None
     
     clrs = ConstructColorlist(Ztable)
+
 #    logger.debug('Checkpoint for colormap function:', (time.time()-start_time))
     Ncolors = len(clrs)
-    cmap = colors.ListedColormap(clrs)
+    cmap = colors.ListedColormap([colors.to_rgba(str(i)) for i in clrs])
+
     cmap2 = colors.LinearSegmentedColormap.from_list('my_cmap2', [(0, 0, 0), (0, 0, 0.001)], 256)
     cmap2._init()
     alphas = numpy.linspace(-0.01, -1, cmap2.N + 3)
@@ -114,26 +116,26 @@ def MainPlot(jsondata, ax, addPositions=True):
     for i, v in numpy.ndenumerate(opacity):
         hexArray[i] = colors.rgb2hex(v*rgb[i][:3])
     
-    jsondata['MeshBest']['hexArray'] = base64.b64encode(hexArray)
+    jsondata['MeshBest']['hexArray'] = base64.b64encode(hexArray).decode()
 
     
     for (j, i) in numpy.ndindex((row, col)):
         if Ztable[j, i] > 0:
             if (j, i + 1) in numpy.ndindex((row, col)):
                 if Ztable[j, i + 1] != Ztable[j, i]:
-                    line = plt.Line2D((i + 1.5, i + 1.5), (j + 0.5, j + 1.5), lw=3, color='white')
+                    line = plt.Line2D((i + 1.5, i + 1.5), (j + 0.5, j + 1.5), lw=2, color='white')
                     plt.gca().add_line(line)
             if (j, i - 1) in numpy.ndindex((row, col)):
                 if Ztable[j, i - 1] != Ztable[j, i]:
-                    line = plt.Line2D((i + 0.5, i + 0.5), (j + 0.5, j + 1.5), lw=3, color='white')
+                    line = plt.Line2D((i + 0.5, i + 0.5), (j + 0.5, j + 1.5), lw=2, color='white')
                     plt.gca().add_line(line)
             if (j + 1, i) in numpy.ndindex((row, col)):
                 if Ztable[j + 1, i] != Ztable[j, i]:
-                    line = plt.Line2D((i + 0.5, i + 1.5), (j + 1.5, j + 1.5), lw=3, color='white')
+                    line = plt.Line2D((i + 0.5, i + 1.5), (j + 1.5, j + 1.5), lw=2, color='white')
                     plt.gca().add_line(line)
             if (j - 1, i) in numpy.ndindex((row, col)):
                 if Ztable[j - 1, i] != Ztable[j, i]:
-                    line = plt.Line2D((i + 0.5, i + 1.5), (j + 0.5, j + 0.5), lw=3, color='white')
+                    line = plt.Line2D((i + 0.5, i + 1.5), (j + 0.5, j + 0.5), lw=2, color='white')
                     plt.gca().add_line(line)
     
     
@@ -142,7 +144,7 @@ def MainPlot(jsondata, ax, addPositions=True):
         try:
             EllipseArray = numpy.fromstring(base64.b64decode(jsondata['MeshBest']['EllipseArray']))
             EllipseArray = numpy.reshape(EllipseArray, (numpy.size(EllipseArray)/6, 6))
-            for line in xrange(numpy.size(EllipseArray)/6):
+            for line in range(numpy.size(EllipseArray)/6):
                 edgecolor = 'orange'
                 linewidth = 2
                 ax.add_patch(El((EllipseArray[line, 0], EllipseArray[line, 1]), EllipseArray[line, 3],
@@ -166,7 +168,7 @@ def MainPlot(jsondata, ax, addPositions=True):
 def LinePlot(jsondata):
     
     try:
-        row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
+        row, col = jsondata['steps_y'], jsondata['steps_x']
         difminpar = jsondata['MeshBest']['difminpar']
     except KeyError:
         logger.error('Experiment parameters are not communicated in the JSON')
@@ -184,9 +186,10 @@ def LinePlot(jsondata):
 
     Zunique = numpy.unique(Ztable[Ztable>0])
     clrs = []
-    for cycle in xrange(1+len(Zunique)/9):
+    for cycle in range(1+len(Zunique)/9):
         clrs = clrs + basecolors
 
-    for index in xrange(len(Zunique)):
+    for index in range(len(Zunique)):
         plt.plot(Dtable*(Ztable==Zunique[index]), color=clrs[index])
+
 

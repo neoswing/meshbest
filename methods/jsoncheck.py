@@ -27,7 +27,7 @@ def check(jsonFilePath, jobtype='simple'):
     runreport = {}
     difminpar = 0.2
     jsondata = {}
-    
+
     if os.path.isfile(jsonFilePath):
         json_file = open(jsonFilePath, 'r')
         jsondata = json.load(json_file)
@@ -39,8 +39,8 @@ def check(jsonFilePath, jobtype='simple'):
         check = False
     
     try:
-        runreport['Ncolumns'] = jsondata['grid_info']['steps_x']
-        runreport['Nrows'] = jsondata['grid_info']['steps_y']
+        runreport['Ncolumns'] = jsondata['steps_x']
+        runreport['Nrows'] = jsondata['steps_y']
     except KeyError:
         runreport['Ncolumns'] = 'NOT OK'
         runreport['Nrows'] = 'NOT OK'
@@ -48,8 +48,8 @@ def check(jsonFilePath, jobtype='simple'):
         check = False
     
     try:
-        runreport['DetectorDistance'] = jsondata['inputDozor']['detectorDistance'] * 1000
-        runreport['DetectorPixelSize'] = jsondata['beamlineInfo']['detectorPixelSize']*1000
+        runreport['DetectorDistance'] = jsondata['detector_distance']
+        runreport['DetectorPixelSize'] = jsondata['detectorPixelSize']*1000
     except KeyError:
         runreport['DetectorDistance'] = 'NOT OK'
         runreport['DetectorPixelSize'] = 'NOT OK'
@@ -57,12 +57,12 @@ def check(jsonFilePath, jobtype='simple'):
         check = False
     
     try:
-        runreport['Wavelength'] = jsondata['inputDozor']['wavelength']
-        runreport['BeamCentreX'] = jsondata['inputDozor']['orgx']
-        runreport['BeamCentreY'] = jsondata['inputDozor']['orgy']
+        runreport['Wavelength'] = jsondata['wavelength']
+        runreport['BeamCentreX'] = jsondata['orgx']
+        runreport['BeamCentreY'] = jsondata['orgy']
         if jobtype!='linescan':
-            runreport['BeamSizeX'] = int(jsondata['grid_info']['beam_width']*1000)
-            runreport['BeamSizeY'] = int(jsondata['grid_info']['beam_height']*1000)
+            runreport['BeamSizeX'] = int(jsondata['beam_h'])
+            runreport['BeamSizeY'] = int(jsondata['beam_v'])
     except KeyError:
         runreport['Wavelength'] = 'NOT OK'
         runreport['BeamCentreX'] = 'NOT OK'

@@ -19,14 +19,14 @@
 ###################################################################################################################
 '''
 
-import algorithms
-import methods
+import meshbest.algorithms
+import meshbest.methods
 
 
 
-__version__ = '10.1'
+__version__ = '11.0'
 
-__author__ = 'Dr. Igor Melnikov (igor.melnikov@esrf.fr)'
+__author__ = 'Igor Melnikov (igor.melnikov@esrf.fr)'
 
 __all__ = []
 

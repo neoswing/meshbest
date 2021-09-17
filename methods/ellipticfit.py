@@ -20,7 +20,7 @@ except:
 
 
 
-def Ellipsoid((x, y), X0, Y0, a, b, fi, h):
+def Ellipsoid(x, y, X0, Y0, a, b, fi, h):
     fi = fi * 3.14159 / 180
     undersqrt = 1 - ((x - X0) * numpy.cos(fi) - (y - Y0) * numpy.sin(fi)) ** 2 / (a ** 2) - \
                 ((x - X0) * numpy.sin(fi) + (y - Y0) * numpy.cos(fi)) ** 2 / (b ** 2)
@@ -39,7 +39,7 @@ def Residue(p, x, y, stretched_submatrix):
     
 #    Penalty = (4*3.14*a*b*h/0.03) #Full ellipsoid volume**2
 
-    E = Ellipsoid((x, y), X0, Y0, a, b, fi, h).reshape(numpy.shape(stretched_submatrix))
+    E = Ellipsoid(x, y, X0, Y0, a, b, fi, h).reshape(numpy.shape(stretched_submatrix))
     MASK = (stretched_submatrix == 0)
     difarray = E - stretched_submatrix
     Focus1 = (numpy.sqrt(a**2-b**2)*numpy.cos(fi)+X0, numpy.sqrt(a**2-b**2)*numpy.sin(fi)+Y0)
@@ -149,11 +149,11 @@ def DoEllipseFit(jsondata):
     
     for Value in range(1, int(numpy.max(Ztable)) + 1):
         queue.put(Value)
-    for item in xrange(nCPU):
+    for item in range(nCPU):
         queue.put(None)
 
     workers = []
-    for item in xrange(nCPU):
+    for item in range(nCPU):
         worker = mp.Process(target=FitEllipse_MP, args=(queue,))
         workers.append(worker)
         worker.start()

@@ -5,7 +5,7 @@ Created on May 15, 2018
 '''
 
 import numpy
-from scipy import stats, signal
+from scipy import stats, signal, spatial
 import base64
 import random
 import matplotlib
@@ -32,8 +32,8 @@ def triangle(x0, y0, length):
 
 
 def From64ToSpotArray(string64):
-    array = numpy.fromstring(base64.b64decode(string64))
-    array = numpy.reshape(array, (numpy.size(array) / 5, 5))
+    array = numpy.frombuffer(base64.b64decode(string64))
+    array = array.reshape((int(array.size/5), 5))
     return array
 
 
@@ -66,7 +66,7 @@ def AMPDiter(array):
     Sigma = numpy.std(matrix, axis=0)
 
     peaks = []
-    for i in xrange(len(Sigma)):
+    for i in range(len(Sigma)):
         if Sigma[i] == 0:
             if (i - 1) / float(len(array)) > 0.00:
                 peaks.append(i - 1)
@@ -79,7 +79,7 @@ def AMPD(array_orig):
 
     fullpeaklist = numpy.array([], dtype=int)
 
-    for cycle in xrange(10):
+    for cycle in range(10):
         M = numpy.mean(array_orig)
 #        SD = numpy.std(array_orig)
         X = numpy.arange(0, len(array_orig))
@@ -116,7 +116,7 @@ def AMPD(array_orig):
         allpeaks = allpeaks.astype(int)
 
         dels = []
-        for i in xrange(len(allpeaks)):
+        for i in range(len(allpeaks)):
             peak = allpeaks[i]
 
             if peak > 1 and peak < (len(array_orig) - 1):
@@ -145,12 +145,13 @@ def CalcSeff(array):
     rarray = numpy.sqrt((array[:, 1] - BeamCenter[0])**2+(array[:, 2] - BeamCenter[1])**2)
     rmax = min(int(BeamCenter[0]), int(BeamCenter[1]))
     
-    HIST = stats.histogram(rarray, numbins=50, defaultlimits=(0, rmax))
+    HIST = numpy.histogram(rarray, bins=50, range=(0, rmax))
+    binsize = HIST[1][1]-HIST[1][0]
     
     Rspace = numpy.linspace(0, rmax, 50)
     density = numpy.zeros(50)
-    for i in xrange(50):
-        density[i] = HIST[0][i]/(2*3.14159*HIST[2]*HIST[2]*(i+0.5))
+    for i in range(50):
+        density[i] = HIST[0][i]/(2*3.14159*(binsize**2)*(i+0.5))
     
     Sdetec = numpy.diff(Rspace**2, 1)
     Sdetec = numpy.append(Sdetec, [0])
@@ -182,16 +183,16 @@ def SaltRingCheck_MP(queue, BeamCenter, Buffer):
 
                 detector = numpy.zeros((ysize, xsize))
 
-                for i in xrange(numpy.shape(array)[0]):
+                for i in range(numpy.shape(array)[0]):
                     detector[int(array[i, 2]), int(array[i, 1])] = 1
 
                 radius_array = numpy.sqrt((array[:, 1] - BeamCenter[0]) ** 2 + (array[:, 2] - BeamCenter[1]) ** 2)
                 density = numpy.zeros(numpy.size(radius_array))
-                for i in xrange(numpy.shape(array)[0]):
+                for i in range(numpy.shape(array)[0]):
                     x0, y0 = int(array[i, 1]), int(array[i, 2])
                     density[i] = numpy.mean(detector[y0 - 5:y0 + 5, x0 - 5:x0 + 5])
 
-                HIST = stats.histogram(radius_array, numbins=400, defaultlimits=(10, min(BeamCenter)), weights=(density))[0]
+                HIST = numpy.histogram(radius_array, bins=400, range=(10, min(BeamCenter)), weights=(density))[0]
 
 #---SALT_RING_CHECK_ANALYSIS---
 
@@ -225,15 +226,12 @@ def SaltRingCheck_MP(queue, BeamCenter, Buffer):
                 array = numpy.delete(array, numpy.where(r), 0)
 
                 if len(array) > 5:
-                    newstring = base64.b64encode(array)
+                    newstring = base64.b64encode(array).decode()
                     Buffer[spot['index']] = newstring
 
 
         except KeyError:
             pass
-
-
-
 
 
 
@@ -253,35 +251,89 @@ def MakeHistogram_MP(queue):
             array = From64ToSpotArray(string)
         else:
             string = False
-
+        
+        result = numpy.zeros(100)
+        
         if string != False:
-            if len(numpy.atleast_1d(array)) > 5:
+            if array.size > 5:
                 RealCoords = numpy.zeros((numpy.shape(array)[0], 5))
+                    
+                x = (array[:, 1] - BeamCenter[0]) * DetectorPixel
+                y = (array[:, 2] - BeamCenter[1]) * DetectorPixel
+                divider = Wavelength * numpy.sqrt(x ** 2 + y ** 2 + DetectorDistance ** 2)
+                RealCoords[:, 0] = x / divider
+                RealCoords[:, 1] = y / divider
+                RealCoords[:, 2] = (1/Wavelength) - DetectorDistance/divider
 
-                for i in xrange(numpy.shape(array)[0]):
+#                RealCoords[i, 3] = array[i, 0]
+#                RealCoords[i, 4] = float(array[i, 3]) / float(array[i, 4])
+                
+                
+                array = spatial.distance.pdist(RealCoords[:, :3], metric='euclidean')
 
-                    x = (array[i, 1] - BeamCenter[0]) * DetectorPixel
-                    y = (array[i, 2] - BeamCenter[1]) * DetectorPixel
-                    divider = Wavelength * numpy.sqrt(x ** 2 + y ** 2 + DetectorDistance ** 2)
-                    RealCoords[i, 0] = x / divider
-                    RealCoords[i, 1] = y / divider
-                    RealCoords[i, 2] = DetectorDistance / divider
-                    RealCoords[i, 3] = array[i, 0]
-                    RealCoords[i, 4] = float(array[i, 3]) / float(array[i, 4])
-
-                array = numpy.array([])
-
-                for i in xrange(len(RealCoords[:, 0])):
-                    for j in range(i + 1, len(RealCoords[:, 0])):
-                        if numpy.abs(RealCoords[i, 3] - RealCoords[j, 3]) < 15:
-                            L = numpy.sqrt((RealCoords[i, 0] - RealCoords[j, 0]) ** 2 + (RealCoords[i, 1] - RealCoords[j, 1]) ** 2 + (RealCoords[i, 2] - RealCoords[j, 2]) ** 2)
-                            if L < limits[1] and L >= limits[0]:
-                                array = numpy.append(array, L)
+                
+#                array = numpy.array([])
+#
+#                for i in range(len(RealCoords[:, 0])):
+#                    for j in range(i + 1, len(RealCoords[:, 0])):
+#                        if numpy.abs(RealCoords[i, 3] - RealCoords[j, 3]) < 15:
+#                            L = numpy.sqrt((RealCoords[i, 0] - RealCoords[j, 0]) ** 2 + (RealCoords[i, 1] - RealCoords[j, 1]) ** 2 + (RealCoords[i, 2] - RealCoords[j, 2]) ** 2)
+#                            if L < limits[1] and L >= limits[0]:
+#                                array = numpy.append(array, L)
 
                 if len(array) > 1:
-                    histogr = stats.histogram(array, numbins=100, defaultlimits=limits)
-                    string = base64.b64encode(histogr[0])
-                    Buffer[spot['index']] = string
+                    result = numpy.histogram(array, bins=100, range=limits)[0]
+#                    string = str(base64.b64encode(result))
+#        Buffer[spot['index']] = ' '.join(result.astype(str).tolist())
+        Buffer[spot['index']] = base64.b64encode(result.astype(float)).decode()
+
+
+def MakeHistogram(spot):
+    limits = (0.001, 0.04)
+
+    if 'dozorSpotList_saltremoved' in spot.keys():
+        string = spot['dozorSpotList_saltremoved']
+        array = From64ToSpotArray(string)
+    elif 'dozorSpotList' in spot.keys():
+        string = spot['dozorSpotList']
+        array = From64ToSpotArray(string)
+    else:
+        string = False
+
+    if string != False:
+        if len(numpy.atleast_1d(array)) > 5:
+            RealCoords = numpy.zeros((numpy.shape(array)[0], 5))
+
+
+                
+            x = (array[:, 1] - BeamCenter[0]) * DetectorPixel
+            y = (array[:, 2] - BeamCenter[1]) * DetectorPixel
+            divider = Wavelength * numpy.sqrt(x ** 2 + y ** 2 + DetectorDistance ** 2)
+            RealCoords[:, 0] = x / divider
+            RealCoords[:, 1] = y / divider
+            RealCoords[:, 2] = (1/Wavelength) - DetectorDistance/divider
+
+#                    RealCoords[i, 3] = array[i, 0]
+#                    RealCoords[i, 4] = float(array[i, 3]) / float(array[i, 4])
+            
+            
+            array = spatial.distance.pdist(RealCoords[:, :3], metric='euclidean')
+            
+            
+#                array = numpy.array([])
+#
+#                for i in range(len(RealCoords[:, 0])):
+#                    for j in range(i + 1, len(RealCoords[:, 0])):
+#                        if numpy.abs(RealCoords[i, 3] - RealCoords[j, 3]) < 15:
+#                            L = numpy.sqrt((RealCoords[i, 0] - RealCoords[j, 0]) ** 2 + (RealCoords[i, 1] - RealCoords[j, 1]) ** 2 + (RealCoords[i, 2] - RealCoords[j, 2]) ** 2)
+#                            if L < limits[1] and L >= limits[0]:
+#                                array = numpy.append(array, L)
+
+            if array.size > 1:
+                histogr = numpy.histogram(array, bins=100, range=limits)
+                return histogr[0]
+
+
 
 
 
@@ -296,49 +348,49 @@ def OverlapCheck_MP(queue, base_regions):
         
         Buffer[item['index']] = 0
         
-        if item['DVHistogram'] != None:
-            try:
-                array = From64ToSpotArray(item['dozorSpotList_saltremoved'])
-            except KeyError:
-                array = From64ToSpotArray(item['dozorSpotList'])
-            N = numpy.size(array) / 5
-    
-            Smax = CalcSeff(array)
-            
-            H0 = numpy.fromstring(base64.b64decode(item['DVHistogram']))
-            H = H0[base_regions]
-            X = numpy.linspace(0.001, 0.04, 100)[base_regions]
-            
-            if numpy.all(H==0):
-                k = 0
-            else:
-                k = numpy.mean(X*H)/numpy.mean(X*X)
-                std = numpy.sqrt(numpy.mean((k*X-H)**2))
-                weights = numpy.exp((N/450.0)*(k*X-H)/std)
-                
-                k = numpy.mean(X*H*weights)/numpy.mean(X*X*weights)
-            
-            
-            undersq = N**2-2*k*Smax/(0.039/99.0)
-            
-            if undersq>0:
-                N2est = int(0.5*(N-numpy.sqrt(undersq)))
-                N1est = int(0.5*(N+numpy.sqrt(undersq)))
-                SatelliteRatio = float(N2est)/float(N1est)
-            else:
-                N2est = N/2
-                N1est = N/2
-                SatelliteRatio = 1
+        try:
+            array = From64ToSpotArray(item['dozorSpotList_saltremoved'])
+        except KeyError:
+            array = From64ToSpotArray(item['dozorSpotList'])
+        N = array.size / 5
 
-            if SatelliteRatio>0.3:
-                if N2est>50:
-                    Buffer[item['index']] = 1
+        Smax = CalcSeff(array)
+        
+        H0 = numpy.frombuffer(base64.b64decode(item['DVHistogram']))
+#        H0 = numpy.array(item['DVHistogram'].split(' ')).astype(int)
+        H = H0[base_regions]
+        X = numpy.linspace(0.001, 0.04, 100)[base_regions]
+        
+        if numpy.all(H==0):
+            k = 0
+        else:
+            k = numpy.mean(X*H)/numpy.mean(X*X)
+            std = numpy.sqrt(numpy.mean((k*X-H)**2))
+            weights = numpy.exp((N/450.0)*(k*X-H)/std)
+            
+            k = numpy.mean(X*H*weights)/numpy.mean(X*X*weights)
+        
+        
+        undersq = N**2-2*k*Smax/(0.039/99.0)
+        
+        if undersq>0:
+            N2est = int(0.5*(N-numpy.sqrt(undersq)))
+            N1est = int(0.5*(N+numpy.sqrt(undersq)))
+            SatelliteRatio = float(N2est)/float(N1est)
+        else:
+            N2est = N/2
+            N1est = N/2
+            SatelliteRatio = 1
+
+        if SatelliteRatio>0.3:
+            if N2est>50:
+                Buffer[item['index']] = 1
 
 
 
 def EliminateSaltRings(jsondata):
     
-    BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
+    BeamCenter = (jsondata['orgx'], jsondata['orgy'])
     
     manager = mp.Manager()
     Buffer = manager.dict()
@@ -348,11 +400,11 @@ def EliminateSaltRings(jsondata):
     for item in jsondata['meshPositions']:
         queue.put(item)
 
-    for item in xrange(nCPU):
+    for item in range(nCPU):
         queue.put(None)
 
     workers = []
-    for item in xrange(nCPU):
+    for item in range(nCPU):
         worker = mp.Process(target=SaltRingCheck_MP, args=(queue, BeamCenter, Buffer, ))
         workers.append(worker)
         worker.start()
@@ -373,23 +425,24 @@ def DetermineMCdiffraction(jsondata):
     manager = mp.Manager()
     Buffer = manager.dict()
     nCPU = mp.cpu_count()
-    queue = mp.Queue()
-
-    Wavelength = jsondata['inputDozor']['wavelength']
-    DetectorDistance = jsondata['inputDozor']['detectorDistance'] * 1000
-    BeamCenter = (jsondata['inputDozor']['orgx'], jsondata['inputDozor']['orgy'])
-    DetectorPixel = jsondata['beamlineInfo']['detectorPixelSize']*1000
-    row, col = jsondata['grid_info']['steps_y'], jsondata['grid_info']['steps_x']
+    queue = mp.Queue()    
+    
+    Wavelength = jsondata['wavelength']
+    DetectorDistance = jsondata['detector_distance'] * 1000
+    BeamCenter = (jsondata['orgx'], jsondata['orgy'])
+    DetectorPixel = jsondata['detectorPixelSize']*1000
+    row, col = jsondata['steps_y'], jsondata['steps_x']
 
 
     for item in jsondata['meshPositions']:
-        queue.put(item)
-    for item in xrange(nCPU):
+        if 'dozorSpotList' in item.keys():
+            queue.put(item)
+    for item in range(nCPU):
         queue.put(None)
 
 
     workers = []
-    for item in xrange(nCPU):
+    for item in range(nCPU):
         worker = mp.Process(target=MakeHistogram_MP, args=(queue, ))
         workers.append(worker)
         worker.start()
@@ -399,15 +452,27 @@ def DetermineMCdiffraction(jsondata):
 
     HIST = numpy.zeros(100)
     for item in jsondata['meshPositions']:
-        try:
+        if 'dozorSpotList' in item.keys():
             item['DVHistogram'] = Buffer[item['index']]
-        except KeyError:
-            item['DVHistogram'] = None
+            
+            HIST += numpy.frombuffer(base64.b64decode(item['DVHistogram']))
+#            HIST += numpy.array(item['DVHistogram'].split(' ')).astype(int)
 
-        if item['DVHistogram'] != None:
-            HIST += numpy.fromstring(base64.b64decode(item['DVHistogram']))
-    
     Buffer = 0
+
+
+
+#    HIST = numpy.zeros(100)
+#    for item in jsondata['meshPositions']:
+#
+#        if 'dozorSpotList' in item.keys():
+#            item['DVHistogram'] = MakeHistogram(item)
+#
+#            if type(item['DVHistogram']) != 'NoneType':
+#                HIST += item['DVHistogram']
+
+
+
 
 # filtering
     window = signal.general_gaussian(M=5, p=1, sig=1)
@@ -418,7 +483,7 @@ def DetermineMCdiffraction(jsondata):
     plt.savefig('Cumulative_DVhistogram_filter.png', dpi=300, transparent=True, bbox_inches='tight')
     plt.close()
     
-    jsondata['MeshBest']['Cumulative_DVHistogram'] = base64.b64encode(HIST)
+    jsondata['MeshBest']['Cumulative_DVHistogram'] = base64.b64encode(HIST).decode()
 
     init_base = AMPD(numpy.max(filtered)-filtered)
     
@@ -444,12 +509,13 @@ def DetermineMCdiffraction(jsondata):
         Buffer = mp.RawArray(ctypes.c_double, row * col)
     
         for item in jsondata['meshPositions']:
-            queue.put(item)
-        for item in xrange(nCPU):
+            if 'DVHistogram' in item.keys():
+                queue.put(item)
+        for item in range(nCPU):
             queue.put(None)
     
         workers = []
-        for item in xrange(nCPU):
+        for item in range(nCPU):
             worker = mp.Process(target=OverlapCheck_MP, args=(queue, base_regions,))
             workers.append(worker)
             worker.start()
@@ -459,7 +525,7 @@ def DetermineMCdiffraction(jsondata):
         
         MXDiff = numpy.frombuffer(Buffer)
         Buffer = 0
-        jsondata['MeshBest']['MXDiff'] = base64.b64encode(MXDiff)
+        jsondata['MeshBest']['MXDiff'] = base64.b64encode(MXDiff).decode()
         
         for key, value in numpy.ndenumerate(jsondata['MeshBest']['positionReference']):
             if MXDiff[value]:
@@ -468,7 +534,7 @@ def DetermineMCdiffraction(jsondata):
     else:
         logger.error('AMPD: Too little data to estimate histogram baseline')
         base_regions = numpy.array([])
-        jsondata['MeshBest']['MXDiff'] = base64.b64encode(numpy.zeros((row, col)))
+        jsondata['MeshBest']['MXDiff'] = base64.b64encode(numpy.zeros((row, col))).decode()
         
     
     
